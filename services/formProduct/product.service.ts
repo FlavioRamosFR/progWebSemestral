@@ -1,18 +1,29 @@
-import { apiPost } from "../api";
 
-const PRODUCTS_ENDPOINT = "/products";
+import { axiosInstance } from "../api";
 
-export interface CreateProductPayload {
-  name: string;
-  category: string;
-  sku: string | null;
-  price: number;
-  quantity: number;
-  supplierId: number;
-  size: string;
-  description: string | null;
+export interface ProdutoProps {
+  nome: string;
+  categoria: string;
+  sku: string;
+  valor: number;
+  quantidade: number;
+  tamanho: string;
+  descricao: string;
+  fornecedorId?: string | number;
 }
 
-export async function createProduct( product: CreateProductPayload,): Promise<void> {
-  await apiPost<unknown, CreateProductPayload>(PRODUCTS_ENDPOINT,product,);
+export class FormProductService {
+  async preecherProduto(produto: ProdutoProps) {
+    try {
+      const resposta = await axiosInstance.post("/products", produto);
+
+      return resposta.data;
+    } catch (erro: unknown) {
+      console.error("Erro ao cadastrar produto:", erro);
+
+      throw new Error("Não foi possível cadastrar o produto.");
+    }
+  }
 }
+
+export const formProductService = new FormProductService();

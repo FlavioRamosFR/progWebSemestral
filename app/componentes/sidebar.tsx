@@ -14,7 +14,7 @@ import {
 const menuItems = [
     { label: "Verificar Estoque", href: "/rgr/dashboard", icon: Home },
     { label: "Relatorio", href: "/rgr/export", icon: FileTextIcon },
-    { label: "Cadastrar Fornecedor", href: "/rgr/provider", icon: Users },
+    { label: "Fornecedor", href: "/rgr/provider", icon: Users },
     { label: "Cadastrar Produto", href: "/rgr/formProduct", icon: Shirt },
 ];
 

@@ -1,6 +1,4 @@
-import "server-only";
-
-import { apiGet } from "../api";
+import { axiosInstance } from "../api";
 
 export interface DashboardProduct {
     id: number;
@@ -11,13 +9,61 @@ export interface DashboardProduct {
     image: string;
 }
 
-const PRODUCTS_ENDPOINT = "/products";
+export class DashboardService {
 
-export async function getDashboardProducts(): Promise<DashboardProduct[]> {
-    const data = await apiGet<unknown>(PRODUCTS_ENDPOINT);
-    if (!Array.isArray(data)) {
-        throw new Error("Formato inesperado da API: era esperado um array de produtos.");
+    async listarTodos() {
+        try {
+            const resposta = await axiosInstance.get("/products");
+            return resposta.data;
+        } catch (erro: unknown) {
+            console.error("Erro ao listar produtos:", erro);
+            throw new Error("Não foi possível listar os produtos.");
+        }
     }
 
-    return data as DashboardProduct[];
+    async cadastrarProduto(produto: DashboardProduct) {
+        try {
+            const resposta = await axiosInstance.post("/products", produto);
+            return resposta.data;
+        } catch (erro: unknown) {
+            console.error("Erro ao cadastrar produto:", erro);
+            throw new Error("Não foi possível cadastrar o produto.");
+        }
+    }
+
+    async editarProduto(id: number, produto: DashboardProduct) {
+        try {
+            const resposta = await axiosInstance.put(`/products/${id}`, produto);
+            return resposta.data;
+        } catch (erro: unknown) {
+            console.error("Erro ao editar produto:", erro);
+            throw new Error("Não foi possível editar o produto.");
+        }
+    }
+    
+    async excluirProduto(id: number) {
+        try {
+            const resposta = await axiosInstance.delete(`/products/${id}`);
+            return resposta.data;
+        } catch (erro: unknown) {
+            console.error("Erro ao excluir produto:", erro);
+            throw new Error("Não foi possível excluir o produto.");
+        }
+    }
+
+    async registrarVenda(id: number, quantidade: number) {
+    try {
+        const resposta = await axiosInstance.patch(`/products/${id}/sale`, {
+            quantidadeVendida: quantidade
+        });
+
+        return resposta.data;
+
+    } catch (erro: unknown) {
+        console.error("Erro ao registrar venda:", erro);
+        throw new Error("Não foi possível registrar a venda do produto.");
+    }
 }
+}
+
+export const dashboardService = new DashboardService();

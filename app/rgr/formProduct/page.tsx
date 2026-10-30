@@ -14,6 +14,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { FORNECEDORES_EXEMPLO } from '../provider/page';
+import { formProductService } from '@/services/formProduct/product.service';
 
 const FORMULARIO_INICIAL = {
   nome: '',
@@ -21,11 +22,12 @@ const FORMULARIO_INICIAL = {
   sku: '',
   valor: '',
   quantidade: '1',
+  fornecedorId: '',
   tamanho: 'M',
   descricao: '',
 };
 
-export default function NovoProdutoPage() {
+export default function formProduto() {
   const [form, setForm] = useState(FORMULARIO_INICIAL);
   const [mensagem, setMensagem] = useState('');
   const [tipoMensagem, setTipoMensagem] = useState<'sucesso' | 'erro'>(
@@ -50,7 +52,7 @@ export default function NovoProdutoPage() {
     setMensagem('');
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const valor = Number(form.valor.replace(',', '.'));
@@ -86,10 +88,24 @@ export default function NovoProdutoPage() {
       quantidade,
     };
 
-    console.log('Produto validado:', produto);
 
-    setTipoMensagem('sucesso');
-    setMensagem('Produto validado com sucesso!');
+    try {
+      const resposta = await formProductService.preecherProduto(produto);
+
+      console.log("Produto cadastrado:", resposta);
+
+      setTipoMensagem("sucesso");
+      setMensagem("Produto cadastrado com sucesso!");
+    } catch (erro) {
+      setTipoMensagem("erro");
+
+      setMensagem(
+        erro instanceof Error
+          ? erro.message
+          : "Erro ao cadastrar produto."
+      );
+    }
+
   }
 
   function limparCampos() {
@@ -306,7 +322,7 @@ export default function NovoProdutoPage() {
                 <select
                   id="fornecedorId"
                   name="fornecedorId"
-                  value={""}
+                  value={form.fornecedorId}
                   onChange={handleChange}
                   required
                   className={classeInput}
@@ -405,8 +421,8 @@ export default function NovoProdutoPage() {
                 role="status"
                 aria-live="polite"
                 className={`mb-5 rounded-lg border px-4 py-3 text-sm ${tipoMensagem === 'erro'
-                    ? 'border-red-200 bg-red-50 text-red-700'
-                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  ? 'border-red-200 bg-red-50 text-red-700'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                   }`}
               >
                 {mensagem}

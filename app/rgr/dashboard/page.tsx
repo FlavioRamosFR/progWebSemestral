@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Search, ShoppingCart, } from "lucide-react";
-import { DashboardProduct, getDashboardProducts } from "@/services/dashboard/dashboard.service";
+import { DashboardProduct, dashboardService } from "@/services/dashboard/dashboard.service";
 
 const PAGE_SIZE = 6;
 
@@ -20,24 +20,33 @@ export default function DashboardPage() {
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-
     useEffect(() => {
-        async function loadProducts() {
+        let componenteAtivo = true;
+
+        async function carregarProdutos() {
             try {
-                const result = await getDashboardProducts();
-                setProducts(result);
-            } catch (error) {
-                setError(
-                    error instanceof Error
-                        ? error.message
-                        : "Erro ao carregar os produtos."
-                );
+                setIsLoading(true);
+                setError(null);
+                const response = await dashboardService.listarTodos();
+                if (componenteAtivo) {
+                    setProducts(response.data);
+                }
+            } catch (error: unknown) {
+                if (componenteAtivo) {
+                    setError(error instanceof Error ? error.message : "Não foi possível carregar os produtos.");
+                }
             } finally {
-                setIsLoading(false);
+                if (componenteAtivo) {
+                    setIsLoading(false);
+                }
             }
         }
 
-        void loadProducts();
+        void carregarProdutos();
+
+        return () => {
+            componenteAtivo = false;
+        };
     }, []);
 
     useEffect(() => {
@@ -266,10 +275,10 @@ export default function DashboardPage() {
 
                                     <span
                                         className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${product.quantity === 0
-                                                ? "bg-red-100 text-red-700"
-                                                : product.quantity <= 5
-                                                    ? "bg-amber-100 text-amber-700"
-                                                    : "bg-emerald-100 text-emerald-700"
+                                            ? "bg-red-100 text-red-700"
+                                            : product.quantity <= 5
+                                                ? "bg-amber-100 text-amber-700"
+                                                : "bg-emerald-100 text-emerald-700"
                                             }`}
                                     >
                                         {product.quantity === 0
@@ -391,8 +400,8 @@ export default function DashboardPage() {
                                         : undefined
                                 }
                                 className={`h-9 min-w-9 rounded-lg px-3 text-sm font-medium transition ${currentPage === page
-                                        ? "bg-[#101d43] text-white"
-                                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                                    ? "bg-[#101d43] text-white"
+                                    : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
                                     }`}
                             >
                                 {page}
