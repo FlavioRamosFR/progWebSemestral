@@ -9,6 +9,7 @@ export interface ProdutoProps {
   quantidade: number;
   tamanho: string;
   descricao: string;
+  imagem?: string;
   fornecedorId?: string | number;
 }
 

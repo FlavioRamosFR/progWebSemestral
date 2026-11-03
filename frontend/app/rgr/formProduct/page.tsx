@@ -9,6 +9,7 @@ import {
   DollarSign,
   Ruler,
   FileText,
+  Image as ImageIcon,
   Barcode,
   Save,
   RotateCcw,
@@ -31,6 +32,7 @@ const FORMULARIO_INICIAL = {
   quantidade: '1',
   fornecedorId: '',
   tamanho: 'M',
+  imagem: '',
   descricao: '',
 };
 
@@ -78,6 +80,7 @@ function FormProduto() {
           quantidade: String(produto.quantidade),
           fornecedorId: produto.fornecedorId ?? '',
           tamanho: produto.tamanho,
+          imagem: produto.imagem,
           descricao: produto.descricao,
         });
         setProdutoCarregado(true);
@@ -452,6 +455,30 @@ function FormProduto() {
                   <option value="GG">GG</option>
                   <option value="Único">Único</option>
                 </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="imagem"
+                  className={`${classeLabel} flex items-center gap-2`}
+                >
+                  <ImageIcon size={16} className="text-slate-400" />
+                  Link da imagem
+                </label>
+
+                <input
+                  id="imagem"
+                  name="imagem"
+                  type="text"
+                  value={form.imagem}
+                  onChange={handleChange}
+                  placeholder="Ex.: https://site.com/camiseta.jpg"
+                  className={classeInput}
+                />
+
+                <p className="mt-1.5 text-xs text-slate-400">
+                  Campo opcional. Sem imagem, o produto aparece com um ícone.
+                </p>
               </div>
 
               <div className="sm:col-span-2">

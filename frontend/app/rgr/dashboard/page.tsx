@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Pencil, Search, ShoppingCart, Trash2, X, } from "lucide-react";
+import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Pencil, Search, Shirt, ShoppingCart, Trash2, X, } from "lucide-react";
 import { DashboardProduct, dashboardService } from "@/services/dashboard/dashboard.service";
 
 const PAGE_SIZE = 6;
@@ -12,6 +12,33 @@ const formatCurrency = (value: number) =>
         style: "currency",
         currency: "BRL",
     }).format(value);
+
+// Mostra um ícone quando o produto não tem imagem ou quando o link não carrega
+function ImagemProduto({ src, alt }: { src: string; alt: string }) {
+    const [falhou, setFalhou] = useState(false);
+
+    if (!src || falhou) {
+        return (
+            <div
+                role="img"
+                aria-label={`${alt} sem imagem`}
+                className="flex h-full w-full items-center justify-center text-slate-300"
+            >
+                <Shirt size={64} strokeWidth={1.2} />
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            onError={() => setFalhou(true)}
+            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+        />
+    );
+}
 
 export default function DashboardPage() {
 
@@ -313,11 +340,10 @@ export default function DashboardPage() {
                             >
                                 {/* Imagem do produto */}
                                 <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                                    <img
+                                    <ImagemProduto
+                                        key={product.image}
                                         src={product.image}
                                         alt={product.name}
-                                        loading="lazy"
-                                        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                                     />
 
                                     <span

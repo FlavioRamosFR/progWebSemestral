@@ -142,4 +142,4 @@ Cada venda guarda uma cópia do nome, da categoria e do valor do produto. Por is
 
 O [frontend](../frontend/README.md) acessa a API pela variável `NEXT_PUBLIC_API_URL` e envia o cookie de sessão em cada requisição. O endereço autorizado pelo CORS é definido em `FRONTEND_ORIGIN`, no `.env`.
 
-O formulário de produto não tem campo de imagem, então `image` vem vazio até que um valor seja enviado em `image` ou `imagem`.
+A imagem do produto é um link salvo no campo `imagem`, que é opcional. A API guarda só o link, não o arquivo.
