@@ -1,4 +1,4 @@
-import { axiosInstance } from "../api";
+import { axiosInstance, mensagemDaApi } from "../api";
 
 export interface DashboardProduct {
     id: number;
@@ -17,7 +17,7 @@ export class DashboardService {
             return resposta.data;
         } catch (erro: unknown) {
             console.error("Erro ao listar produtos:", erro);
-            throw new Error("Não foi possível listar os produtos.");
+            throw new Error(mensagemDaApi(erro, "Não foi possível listar os produtos."));
         }
     }
 
@@ -47,7 +47,19 @@ export class DashboardService {
             return resposta.data;
         } catch (erro: unknown) {
             console.error("Erro ao excluir produto:", erro);
-            throw new Error("Não foi possível excluir o produto.");
+            throw new Error(mensagemDaApi(erro, "Não foi possível excluir o produto."));
+        }
+    }
+
+    async removerQuantidade(id: number, quantidade: number) {
+        try {
+            const resposta = await axiosInstance.delete(`/products/${id}`, {
+                params: { quantidade }
+            });
+            return resposta.data;
+        } catch (erro: unknown) {
+            console.error("Erro ao retirar do estoque:", erro);
+            throw new Error(mensagemDaApi(erro, "Não foi possível retirar do estoque."));
         }
     }
 
@@ -61,7 +73,7 @@ export class DashboardService {
 
     } catch (erro: unknown) {
         console.error("Erro ao registrar venda:", erro);
-        throw new Error("Não foi possível registrar a venda do produto.");
+        throw new Error(mensagemDaApi(erro, "Não foi possível registrar a venda do produto."));
     }
 }
 }

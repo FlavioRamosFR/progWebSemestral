@@ -14,8 +14,9 @@ export function LoginSection() {
         e.preventDefault();
         setErro('');
 
-        const res = await fetch('/api/login', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
@@ -25,7 +26,7 @@ export function LoginSection() {
             router.refresh();
         } else {
             const data = await res.json();
-            setErro(data.error)
+            setErro(data.erro)
         }
     };
 

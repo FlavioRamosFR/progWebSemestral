@@ -1,72 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { AlertCircle,BarChart3,CalendarDays,ChartNoAxesCombined,DollarSign,FileText,Package,Printer,Search,ShoppingBag,TrendingUp,} from 'lucide-react';
-
-interface ItemVendido {
-  id: string | number;
-  nome: string;
-  categoria?: string;
-  quantidadeVendida: number;
-  faturamento: number;
-}
+import { reportService, type BestSellingProduct, type SalesAnalysis, type SalesSummary } from '@/services/export/reports.service';
 
 interface RelatorioVendas {
   periodo: { inicio: string; fim: string;};
-  resumo: { faturamentoTotal: number; quantidadeVendas: number; itensVendidos: number;};
-  itensMaisVendidos: ItemVendido[];
+  resumo: SalesSummary;
+  analise: SalesAnalysis;
+  itensMaisVendidos: BestSellingProduct[];
 }
-
-/*
- * DADOS FICTÍCIOS PARA DESENVOLVIMENTO DO FRONT-END.
- * Os valores são usados para visualizar e imprimir o relatório.
- * Eles não são alterados quando o período selecionado muda.
- */
-const RELATORIO_FICTICIO: Omit<RelatorioVendas, 'periodo'> = {
-  resumo: {
-    faturamentoTotal: 4850.5,
-    quantidadeVendas: 42,
-    itensVendidos: 68,
-  },
-
-  itensMaisVendidos: [
-    {
-      id: 1,
-      nome: 'Camiseta básica',
-      categoria: 'Camisa',
-      quantidadeVendida: 24,
-      faturamento: 1200,
-    },
-    {
-      id: 2,
-      nome: 'Calça jeans',
-      categoria: 'Calça',
-      quantidadeVendida: 18,
-      faturamento: 1800,
-    },
-    {
-      id: 3,
-      nome: 'Short casual',
-      categoria: 'Short',
-      quantidadeVendida: 12,
-      faturamento: 720,
-    },
-    {
-      id: 4,
-      nome: 'Blusa de moletom',
-      categoria: 'Blusa',
-      quantidadeVendida: 8,
-      faturamento: 640,
-    },
-    {
-      id: 5,
-      nome: 'Jaqueta corta-vento',
-      categoria: 'Jaqueta',
-      quantidadeVendida: 6,
-      faturamento: 490.5,
-    },
-  ],
-};
 
 function formatarDataInput(data: Date): string {
   const ano = data.getFullYear();
@@ -102,6 +45,7 @@ export default function RelatorioVendasPage() {
   const [dataFim, setDataFim] = useState('');
   const [relatorio, setRelatorio] = useState<RelatorioVendas | null>(null);
   const [erro, setErro] = useState('');
+  const [gerando, setGerando] = useState(false);
 
   // Define o primeiro dia do mês e a data atual como período inicial.
   useEffect(() => {
@@ -114,17 +58,8 @@ export default function RelatorioVendasPage() {
     setDataFim(formatarDataInput(hoje));
   }, []);
 
-  // Ordena os produtos pela quantidade vendida.
-  const itensOrdenados = useMemo(() => {
-    if (!relatorio) return [];
-
-    return [...relatorio.itensMaisVendidos].sort(
-      (a, b) => b.quantidadeVendida - a.quantidadeVendida,
-    );
-  }, [relatorio]);
-
-  // Identifica o produto com maior quantidade vendida.
-  const itemMaisVendido = itensOrdenados[0];
+  // A API já entrega o ranking em ordem decrescente de quantidade vendida.
+  const itensOrdenados = relatorio ? relatorio.itensMaisVendidos : [];
 
   // Utilizado para calcular a largura das barras do ranking.
   const maiorQuantidade = Math.max(
@@ -132,15 +67,8 @@ export default function RelatorioVendasPage() {
     ...itensOrdenados.map((item) => item.quantidadeVendida),
   );
 
-  // Calcula o ticket médio.
-  const ticketMedio =
-    relatorio && relatorio.resumo.quantidadeVendas > 0
-      ? relatorio.resumo.faturamentoTotal /
-        relatorio.resumo.quantidadeVendas
-      : 0;
-
-  // Gera o relatório usando a constante fictícia.
-  function gerarRelatorio(event: FormEvent<HTMLFormElement>) {
+  // Gera o relatório com os cálculos feitos pela API.
+  async function gerarRelatorio(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setErro('');
@@ -156,13 +84,34 @@ export default function RelatorioVendasPage() {
       return;
     }
 
-    setRelatorio({
-      ...RELATORIO_FICTICIO,
-      periodo: {
-        inicio: dataInicio,
-        fim: dataFim,
-      },
-    });
+    setGerando(true);
+
+    try {
+      const filtro = { dataInicio, dataFim };
+      const [resumo, analise, itensMaisVendidos] = await Promise.all([
+        reportService.listarResumo(filtro),
+        reportService.listarAnalise(filtro),
+        reportService.listarProdutosMaisVendidos(filtro),
+      ]);
+
+      setRelatorio({
+        periodo: {
+          inicio: dataInicio,
+          fim: dataFim,
+        },
+        resumo,
+        analise,
+        itensMaisVendidos,
+      });
+    } catch (erroRelatorio) {
+      setErro(
+        erroRelatorio instanceof Error
+          ? erroRelatorio.message
+          : 'Não foi possível gerar o relatório.',
+      );
+    } finally {
+      setGerando(false);
+    }
   }
 
   // Abre a janela de impressão do navegador.
@@ -254,10 +203,11 @@ export default function RelatorioVendasPage() {
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 sm:col-span-2 lg:col-span-1"
+              disabled={gerando}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:opacity-60 sm:col-span-2 lg:col-span-1"
             >
               <Search size={18} />
-              Gerar relatório
+              {gerando ? 'Gerando...' : 'Gerar relatório'}
             </button>
           </form>
 
@@ -349,7 +299,7 @@ export default function RelatorioVendasPage() {
                   </div>
 
                   <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {formatarNumero(relatorio.resumo.quantidadeVendas)}
+                    {formatarNumero(relatorio.resumo.vendasRealizadas)}
                   </p>
 
                   <p className="mt-1 text-xs text-slate-500">
@@ -379,7 +329,7 @@ export default function RelatorioVendasPage() {
                   </div>
 
                   <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {formatarMoeda(ticketMedio)}
+                    {formatarMoeda(relatorio.resumo.ticketMedio)}
                   </p>
 
                   <p className="mt-1 text-xs text-slate-500">
@@ -401,61 +351,55 @@ export default function RelatorioVendasPage() {
                     </h3>
 
                     <p className="mt-0.5 text-xs text-slate-500">
-                      Destaques calculados a partir dos dados demonstrativos.
+                      Destaques calculados a partir das vendas do período.
                     </p>
                   </div>
                 </div>
 
-                {itemMaisVendido ? (
+                {relatorio.analise.produtoMaisVendido ? (
                   <div className="space-y-3 text-sm leading-6 text-slate-600">
                     <p>
                       O produto com maior quantidade vendida foi{' '}
                       <strong className="font-semibold text-slate-900">
-                        {itemMaisVendido.nome}
+                        {relatorio.analise.produtoMaisVendido}
                       </strong>
                       , com{' '}
                       <strong className="font-semibold text-slate-900">
-                        {formatarNumero(itemMaisVendido.quantidadeVendida)}
+                        {formatarNumero(relatorio.analise.quantidadeVendida)}
                       </strong>{' '}
                       unidade(s).
                     </p>
 
-                    {relatorio.resumo.itensVendidos > 0 && (
-                      <p>
-                        Esse produto representa aproximadamente{' '}
-                        <strong className="font-semibold text-slate-900">
-                          {(
-                            (itemMaisVendido.quantidadeVendida /
-                              relatorio.resumo.itensVendidos) *
-                            100
-                          ).toLocaleString('pt-BR', {
-                            maximumFractionDigits: 1,
-                          })}
-                          %
-                        </strong>{' '}
-                        do total de unidades vendidas.
-                      </p>
-                    )}
+                    <p>
+                      Esse produto representa aproximadamente{' '}
+                      <strong className="font-semibold text-slate-900">
+                        {relatorio.analise.percentualVendas.toLocaleString('pt-BR', {
+                          maximumFractionDigits: 1,
+                        })}
+                        %
+                      </strong>{' '}
+                      do total de unidades vendidas.
+                    </p>
 
                     <p>
-                      O faturamento demonstrativo foi de{' '}
+                      O faturamento foi de{' '}
                       <strong className="font-semibold text-slate-900">
-                        {formatarMoeda(relatorio.resumo.faturamentoTotal)}
+                        {formatarMoeda(relatorio.analise.faturamentoTotal)}
                       </strong>
                       , com{' '}
                       <strong className="font-semibold text-slate-900">
-                        {formatarNumero(relatorio.resumo.quantidadeVendas)}
+                        {formatarNumero(relatorio.analise.quantidadeVendas)}
                       </strong>{' '}
                       venda(s) e ticket médio de{' '}
                       <strong className="font-semibold text-slate-900">
-                        {formatarMoeda(ticketMedio)}
+                        {formatarMoeda(relatorio.analise.ticketMedio)}
                       </strong>
                       .
                     </p>
                   </div>
                 ) : (
                   <p className="text-sm leading-6 text-slate-500">
-                    Não existem produtos para exibir no ranking.
+                    Não há vendas registradas neste período.
                   </p>
                 )}
               </section>
@@ -504,7 +448,7 @@ export default function RelatorioVendasPage() {
                       </thead>
 
                       <tbody className="divide-y divide-slate-100">
-                        {itensOrdenados.map((item, indice) => {
+                        {itensOrdenados.map((item) => {
                           const percentual =
                             (item.quantidadeVendida / maiorQuantidade) * 100;
 
@@ -516,12 +460,12 @@ export default function RelatorioVendasPage() {
                               <td className="px-5 py-4">
                                 <span
                                   className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold ${
-                                    indice === 0
+                                    item.posicao === 1
                                       ? 'bg-blue-50 text-blue-700'
                                       : 'bg-slate-100 text-slate-600'
                                   }`}
                                 >
-                                  {indice + 1}
+                                  {item.posicao}
                                 </span>
                               </td>
 
@@ -572,10 +516,6 @@ export default function RelatorioVendasPage() {
                 )}
               </section>
 
-              <p className="text-xs text-slate-400">
-                Relatório demonstrativo do sistema RGR. Os números apresentados
-                não representam vendas reais.
-              </p>
             </section>
 
             {/* Ações fora do relatório impresso */}

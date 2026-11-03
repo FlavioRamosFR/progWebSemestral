@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Building2, Save, X, Store, Mail, Phone, MapPin,} from 'lucide-react';
+import { formProductService as providerService } from '@/services/provider/provider.service';
 
 interface Fornecedor {
   id: string;
@@ -22,8 +23,6 @@ interface Fornecedor {
 
 type FormularioFornecedor = Omit<Fornecedor, 'id'>;
 
-const STORAGE_KEY = 'rgr_fornecedores';
-
 const FORMULARIO_VAZIO: FormularioFornecedor = {
   nome: '',
   nomeFantasia: '',
@@ -36,18 +35,6 @@ const FORMULARIO_VAZIO: FormularioFornecedor = {
   estado: '',
   observacoes: '',
 };
-
-function lerFornecedores(): Fornecedor[] {
-  try {
-    const dados = localStorage.getItem(STORAGE_KEY);
-    if (!dados) return [];
-
-    const resultado: unknown = JSON.parse(dados);
-    return Array.isArray(resultado) ? (resultado as Fornecedor[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function CadastrarFornecedorPage() {
   const router = useRouter();
@@ -68,25 +55,19 @@ export default function CadastrarFornecedorPage() {
       return;
     }
 
-    const fornecedor = lerFornecedores().find(
-      (item) => item.id === idUrl,
-    );
+    providerService
+      .getProvider(idUrl)
+      .then((fornecedor) => {
+        setId(fornecedor.id);
 
-    if (!fornecedor) {
-      setNaoEncontrado(true);
-      setCarregando(false);
-      return;
-    }
-
-    setId(fornecedor.id);
-
-    const { id: _id, ...dadosFornecedor } = fornecedor;
-    setFormulario({
-      ...FORMULARIO_VAZIO,
-      ...dadosFornecedor,
-    });
-
-    setCarregando(false);
+        const { id: _id, ...dadosFornecedor } = fornecedor;
+        setFormulario({
+          ...FORMULARIO_VAZIO,
+          ...dadosFornecedor,
+        });
+      })
+      .catch(() => setNaoEncontrado(true))
+      .finally(() => setCarregando(false));
   }, []);
 
   function atualizarCampo(
@@ -101,7 +82,7 @@ export default function CadastrarFornecedorPage() {
     setErro('');
   }
 
-  function salvarFornecedor(event: FormEvent<HTMLFormElement>) {
+  async function salvarFornecedor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro('');
 
@@ -118,17 +99,7 @@ export default function CadastrarFornecedorPage() {
     setSalvando(true);
 
     try {
-      const fornecedores: Fornecedor[] = lerFornecedores();
-
-      if (id && !fornecedores.some((item) => item.id === id)) {
-        setErro(
-          'Este fornecedor não foi encontrado no armazenamento local. Volte à lista e tente novamente.',
-        );
-        setSalvando(false);
-        return;
-      }
-
-      const novoFornecedor: Fornecedor = {
+      const dados: FormularioFornecedor = {
         ...formulario,
         nome: formulario.nome.trim(),
         nomeFantasia: formulario.nomeFantasia.trim(),
@@ -140,26 +111,20 @@ export default function CadastrarFornecedorPage() {
         cidade: formulario.cidade.trim(),
         estado: formulario.estado.trim().toUpperCase(),
         observacoes: formulario.observacoes.trim(),
-        id:
-          id ??
-          (typeof crypto !== 'undefined' &&
-          typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : String(Date.now())),
       };
 
-      const atualizados = id
-        ? fornecedores.map((item) =>
-            item.id === id ? novoFornecedor : item,
-          )
-        : [...fornecedores, novoFornecedor];
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizados));
+      if (id) {
+        await providerService.updateProvider(id, dados);
+      } else {
+        await providerService.preecherProvider(dados);
+      }
 
       router.push('/rgr/provider');
-    } catch {
+    } catch (erro) {
       setErro(
-        'Não foi possível salvar o fornecedor. Verifique o armazenamento do navegador e tente novamente.',
+        erro instanceof Error
+          ? erro.message
+          : 'Não foi possível salvar o fornecedor. Tente novamente.',
       );
       setSalvando(false);
     }
@@ -187,7 +152,7 @@ export default function CadastrarFornecedorPage() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            O cadastro pode ter sido excluído ou não existe neste navegador.
+            O cadastro pode ter sido excluído ou não existe.
           </p>
 
           <Link

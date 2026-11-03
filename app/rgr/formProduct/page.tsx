@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Package,
   Tags,
@@ -13,8 +14,14 @@ import {
   RotateCcw,
   Truck,
 } from 'lucide-react';
-import { FORNECEDORES_EXEMPLO } from '../provider/page';
 import { formProductService } from '@/services/formProduct/product.service';
+import { formProductService as providerService } from '@/services/provider/provider.service';
+
+interface FornecedorOpcao {
+  id: string;
+  nome: string;
+  nomeFantasia: string;
+}
 
 const FORMULARIO_INICIAL = {
   nome: '',
@@ -27,12 +34,59 @@ const FORMULARIO_INICIAL = {
   descricao: '',
 };
 
-export default function formProduto() {
+function FormProduto() {
+  const router = useRouter();
+  // Com ?id=1 na URL o formulário edita o produto; sem id, cadastra um novo.
+  const id = useSearchParams().get('id');
+  const [produtoCarregado, setProdutoCarregado] = useState(!id);
   const [form, setForm] = useState(FORMULARIO_INICIAL);
   const [mensagem, setMensagem] = useState('');
   const [tipoMensagem, setTipoMensagem] = useState<'sucesso' | 'erro'>(
     'sucesso',
   );
+  const [fornecedores, setFornecedores] = useState<FornecedorOpcao[]>([]);
+
+  useEffect(() => {
+    providerService
+      .listingAllProvider()
+      .then(setFornecedores)
+      .catch(() => {
+        setTipoMensagem('erro');
+        setMensagem('Não foi possível carregar os fornecedores.');
+      });
+  }, []);
+
+  useEffect(() => {
+    setMensagem('');
+
+    if (!id) {
+      setForm(FORMULARIO_INICIAL);
+      setProdutoCarregado(true);
+      return;
+    }
+
+    setProdutoCarregado(false);
+
+    formProductService
+      .buscarProduto(id)
+      .then((produto) => {
+        setForm({
+          nome: produto.nome,
+          categoria: produto.categoria,
+          sku: produto.sku ?? '',
+          valor: String(produto.valor).replace('.', ','),
+          quantidade: String(produto.quantidade),
+          fornecedorId: produto.fornecedorId ?? '',
+          tamanho: produto.tamanho,
+          descricao: produto.descricao,
+        });
+        setProdutoCarregado(true);
+      })
+      .catch((erro: Error) => {
+        setTipoMensagem('erro');
+        setMensagem(erro.message);
+      });
+  }, [id]);
 
   const classeLabel = 'block text-sm font-medium text-slate-700';
 
@@ -90,6 +144,12 @@ export default function formProduto() {
 
 
     try {
+      if (id) {
+        await formProductService.atualizarProduto(id, produto);
+        router.push('/rgr/dashboard');
+        return;
+      }
+
       const resposta = await formProductService.preecherProduto(produto);
 
       console.log("Produto cadastrado:", resposta);
@@ -102,13 +162,18 @@ export default function formProduto() {
       setMensagem(
         erro instanceof Error
           ? erro.message
-          : "Erro ao cadastrar produto."
+          : "Erro ao salvar o produto."
       );
     }
 
   }
 
   function limparCampos() {
+    if (id) {
+      router.push('/rgr/dashboard');
+      return;
+    }
+
     setForm({ ...FORMULARIO_INICIAL });
     setMensagem('');
   }
@@ -123,15 +188,17 @@ export default function formProduto() {
             <span>/</span>
             <span>Produtos</span>
             <span>/</span>
-            <span>Cadastro</span>
+            <span>{id ? 'Edição' : 'Cadastro'}</span>
           </div>
 
           <h1 className="text-2xl font-bold text-[#172b4d] sm:text-3xl">
-            Cadastrar produto
+            {id ? 'Editar produto' : 'Cadastrar produto'}
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Preencha os dados para adicionar um novo produto ao estoque.
+            {id
+              ? 'Altere os dados do produto e salve as mudanças.'
+              : 'Preencha os dados para adicionar um novo produto ao estoque.'}
           </p>
         </header>
 
@@ -329,7 +396,7 @@ export default function formProduto() {
                 >
                   <option value="">Selecione um fornecedor</option>
 
-                  {FORNECEDORES_EXEMPLO.map((fornecedor) => (
+                  {fornecedores.map((fornecedor) => (
                     <option key={fornecedor.id} value={fornecedor.id}>
                       {fornecedor.nomeFantasia || fornecedor.nome}
                     </option>
@@ -436,20 +503,30 @@ export default function formProduto() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
               >
                 <RotateCcw size={17} />
-                Limpar campos
+                {id ? 'Cancelar' : 'Limpar campos'}
               </button>
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+                disabled={!produtoCarregado}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save size={17} />
-                Cadastrar produto
+                {id ? 'Salvar alterações' : 'Cadastrar produto'}
               </button>
             </div>
           </div>
         </form>
       </div>
     </main>
+  );
+}
+
+// useSearchParams precisa estar dentro de um Suspense no Next.js
+export default function FormProdutoPage() {
+  return (
+    <Suspense>
+      <FormProduto />
+    </Suspense>
   );
 }

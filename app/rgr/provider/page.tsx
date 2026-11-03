@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {Plus, Search, Pencil, Trash2, Users, Phone, Mail, MapPin, Store, X, AlertTriangle} from 'lucide-react';
+import { formProductService as providerService } from '@/services/provider/provider.service';
 
 interface Fornecedor {
   id: string;
@@ -19,90 +20,6 @@ interface Fornecedor {
   observacoes: string;
 }
 
-export const FORNECEDORES_EXEMPLO: Fornecedor[] = [
-  {
-    id: '1',
-    nome: 'Confecções Pantanal Ltda.',
-    nomeFantasia: 'Pantanal Moda',
-    documento: '00.000.000/0001-00',
-    telefone: '(67) 3000-0001',
-    email: 'contato@pantanal.example',
-    cep: '79300-000',
-    endereco: 'Rua das Flores, 120',
-    cidade: 'Corumbá',
-    estado: 'MS',
-    observacoes: 'Fornecedor de camisetas e blusas.',
-  },
-  {
-    id: '2',
-    nome: 'Distribuidora Central Ltda.',
-    nomeFantasia: 'Central Atacado',
-    documento: '00.000.000/0001-01',
-    telefone: '(67) 3000-0002',
-    email: 'vendas@central.example',
-    cep: '79002-000',
-    endereco: 'Avenida Brasil, 450',
-    cidade: 'Campo Grande',
-    estado: 'MS',
-    observacoes: 'Trabalha com roupas em atacado.',
-  },
-  {
-    id: '3',
-    nome: 'Jeans & Cia Confecções',
-    nomeFantasia: 'Jeans & Cia',
-    documento: '00.000.000/0001-02',
-    telefone: '(67) 3000-0003',
-    email: 'comercial@jeans.example',
-    cep: '79010-000',
-    endereco: 'Rua da Moda, 85',
-    cidade: 'Campo Grande',
-    estado: 'MS',
-    observacoes: 'Fornecedor de calças e shorts jeans.',
-  },
-  {
-    id: '4',
-    nome: 'Estilo Jovem Confecções',
-    nomeFantasia: 'Estilo Jovem',
-    documento: '00.000.000/0001-03',
-    telefone: '(67) 3000-0004',
-    email: 'contato@estilojovem.example',
-    cep: '79310-000',
-    endereco: 'Rua do Comércio, 230',
-    cidade: 'Corumbá',
-    estado: 'MS',
-    observacoes: 'Especializada em moda jovem.',
-  },
-  {
-    id: '5',
-    nome: 'Atacado Fashion Ltda.',
-    nomeFantasia: 'Fashion Atacado',
-    documento: '00.000.000/0001-04',
-    telefone: '(67) 3000-0005',
-    email: 'pedidos@fashion.example',
-    cep: '79200-000',
-    endereco: 'Avenida Central, 510',
-    cidade: 'Aquidauana',
-    estado: 'MS',
-    observacoes: 'Fornecedor de jaquetas e casacos.',
-  },
-];
-
-const STORAGE_KEY = 'rgr_fornecedores';
-
-function lerFornecedores(): Fornecedor[] {
-  try {
-    if (!FORNECEDORES_EXEMPLO) return [];
-
-    const resultado: unknown = FORNECEDORES_EXEMPLO;
-    return Array.isArray(resultado) ? (resultado as Fornecedor[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function salvarFornecedores(fornecedores: Fornecedor[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(fornecedores));
-}
 
 export default function FornecedoresPage() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
@@ -111,10 +28,14 @@ export default function FornecedoresPage() {
   const [fornecedorSelecionado, setFornecedorSelecionado] =
     useState<Fornecedor | null>(null);
   const [erroExclusao, setErroExclusao] = useState('');
+  const [erroCarregamento, setErroCarregamento] = useState('');
 
   useEffect(() => {
-    setFornecedores(lerFornecedores());
-    setCarregando(false);
+    providerService
+      .listingAllProvider()
+      .then(setFornecedores)
+      .catch((erro: Error) => setErroCarregamento(erro.message))
+      .finally(() => setCarregando(false));
   }, []);
 
   const fornecedoresFiltrados = useMemo(() => {
@@ -137,21 +58,22 @@ export default function FornecedoresPage() {
     );
   }, [fornecedores, busca]);
 
-  function excluirFornecedor() {
+  async function excluirFornecedor() {
     if (!fornecedorSelecionado) return;
 
     try {
-      const atualizados = fornecedores.filter(
-        (fornecedor) => fornecedor.id !== fornecedorSelecionado.id,
-      );
+      await providerService.deleteProvider(fornecedorSelecionado.id);
 
-      salvarFornecedores(atualizados);
-      setFornecedores(atualizados);
+      setFornecedores((atuais) =>
+        atuais.filter((fornecedor) => fornecedor.id !== fornecedorSelecionado.id),
+      );
       setFornecedorSelecionado(null);
       setErroExclusao('');
-    } catch {
+    } catch (erro) {
       setErroExclusao(
-        'Não foi possível excluir o fornecedor. Tente novamente.',
+        erro instanceof Error
+          ? erro.message
+          : 'Não foi possível excluir o fornecedor. Tente novamente.',
       );
     }
   }
@@ -246,6 +168,15 @@ export default function FornecedoresPage() {
             />
           </div>
         </div>
+
+        {erroCarregamento && (
+          <p
+            role="alert"
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          >
+            {erroCarregamento}
+          </p>
+        )}
 
         {/* Tabela */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">

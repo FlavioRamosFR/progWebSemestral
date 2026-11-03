@@ -1,5 +1,5 @@
 
-import { axiosInstance } from "../api";
+import { axiosInstance, mensagemDaApi } from "../api";
 
 // Parâmetros para filtrar o relatório
 export interface ReportFilter {
@@ -49,7 +49,7 @@ export class ReportService {
 
         } catch (erro: unknown) {
             console.error("Erro ao buscar resumo das vendas:", erro);
-            throw new Error("Não foi possível carregar o resumo das vendas.");
+            throw new Error(mensagemDaApi(erro, "Não foi possível carregar o resumo das vendas."));
         }
     }
 
@@ -65,7 +65,7 @@ export class ReportService {
 
         } catch (erro: unknown) {
             console.error("Erro ao buscar análise do período:", erro);
-            throw new Error("Não foi possível carregar a análise do período.");
+            throw new Error(mensagemDaApi(erro, "Não foi possível carregar a análise do período."));
         }
     }
 
@@ -81,7 +81,7 @@ export class ReportService {
 
         } catch (erro: unknown) {
             console.error("Erro ao buscar produtos mais vendidos:", erro);
-            throw new Error("Não foi possível carregar o ranking de produtos.");
+            throw new Error(mensagemDaApi(erro, "Não foi possível carregar o ranking de produtos."));
         }
     }
 

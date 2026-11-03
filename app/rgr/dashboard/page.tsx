@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Search, ShoppingCart, } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Pencil, Search, ShoppingCart, Trash2, X, } from "lucide-react";
 import { DashboardProduct, dashboardService } from "@/services/dashboard/dashboard.service";
 
 const PAGE_SIZE = 6;
@@ -19,6 +20,9 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [produtoRemovendo, setProdutoRemovendo] = useState<DashboardProduct | null>(null);
+    const [quantidadeRemover, setQuantidadeRemover] = useState("1");
+    const [erroRemocao, setErroRemocao] = useState("");
 
     useEffect(() => {
         let componenteAtivo = true;
@@ -103,23 +107,66 @@ export default function DashboardPage() {
     };
 
     // Registra a venda de uma unidade
-    const handleSale = (productId: number) => {
-        setProducts((previousProducts) =>
-            previousProducts.map((product) => {
-                if (product.id !== productId) {
-                    return product;
-                }
+    const handleSale = async (productId: number) => {
+        try {
+            const resposta = await dashboardService.registrarVenda(productId, 1);
 
-                if (product.quantity <= 0) {
-                    return product;
-                }
+            setProducts((previousProducts) =>
+                previousProducts.map((product) =>
+                    product.id === productId
+                        ? { ...product, quantity: resposta.produto.quantidade }
+                        : product
+                )
+            );
+        } catch (error: unknown) {
+            setError(error instanceof Error ? error.message : "Não foi possível registrar a venda.");
+        }
+    };
 
-                return {
-                    ...product,
-                    quantity: product.quantity - 1,
-                };
-            })
-        );
+    const abrirRemocao = (product: DashboardProduct) => {
+        setProdutoRemovendo(product);
+        setQuantidadeRemover("1");
+        setErroRemocao("");
+    };
+
+    // Retira somente a quantidade informada; o produto continua cadastrado
+    const retirarDoEstoque = async () => {
+        if (!produtoRemovendo) return;
+
+        try {
+            const produto = await dashboardService.removerQuantidade(
+                produtoRemovendo.id,
+                Number(quantidadeRemover)
+            );
+
+            setProducts((previousProducts) =>
+                previousProducts.map((product) =>
+                    product.id === produtoRemovendo.id
+                        ? { ...product, quantity: produto.quantidade }
+                        : product
+                )
+            );
+            setProdutoRemovendo(null);
+        } catch (error: unknown) {
+            setErroRemocao(error instanceof Error ? error.message : "Não foi possível retirar do estoque.");
+        }
+    };
+
+    // Exclui o cadastro do produto
+    const excluirProduto = async () => {
+        if (!produtoRemovendo) return;
+
+        try {
+            await dashboardService.excluirProduto(produtoRemovendo.id);
+
+            setProducts((previousProducts) =>
+                previousProducts.filter((product) => product.id !== produtoRemovendo.id)
+            );
+            setCurrentPage(1);
+            setProdutoRemovendo(null);
+        } catch (error: unknown) {
+            setErroRemocao(error instanceof Error ? error.message : "Não foi possível excluir o produto.");
+        }
     };
 
     //Carregamento
@@ -334,6 +381,27 @@ export default function DashboardPage() {
                                                 : "Registrar venda"}
                                         </button>
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Link
+                                            href={`/rgr/formProduct?id=${product.id}`}
+                                            aria-label={`Editar ${product.name}`}
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                                        >
+                                            <Pencil size={15} />
+                                            Editar
+                                        </Link>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => abrirRemocao(product)}
+                                            aria-label={`Remover ${product.name}`}
+                                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                                        >
+                                            <Trash2 size={15} />
+                                            Remover
+                                        </button>
+                                    </div>
                                 </div>
                             </article>
                         ))}
@@ -428,6 +496,83 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Remoção de produto */}
+            {produtoRemovendo && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="titulo-remocao"
+                        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+                    >
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 id="titulo-remocao" className="text-lg font-bold text-slate-900">
+                                    Remover {produtoRemovendo.name}
+                                </h2>
+
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Em estoque: {products.find((product) => product.id === produtoRemovendo.id)?.quantity ?? 0} unidade(s)
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setProdutoRemovendo(null)}
+                                aria-label="Fechar"
+                                className="rounded-lg p-1 text-slate-500 transition hover:bg-slate-100"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="mt-5 rounded-xl border border-slate-200 p-4">
+                            <label htmlFor="quantidadeRemover" className="block text-sm font-medium text-slate-700">
+                                Quantidade para retirar do estoque
+                            </label>
+
+                            <input
+                                id="quantidadeRemover"
+                                type="number"
+                                min="1"
+                                value={quantidadeRemover}
+                                onChange={(event) => {
+                                    setQuantidadeRemover(event.target.value);
+                                    setErroRemocao("");
+                                }}
+                                className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+
+                            <button
+                                type="button"
+                                onClick={retirarDoEstoque}
+                                className="mt-3 w-full rounded-lg bg-[#101d43] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1c326b]"
+                            >
+                                Retirar do estoque
+                            </button>
+
+                            <p className="mt-2 text-xs text-slate-500">
+                                O produto continua cadastrado e a retirada não conta como venda.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={excluirProduto}
+                            className="mt-3 w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                        >
+                            Excluir o produto inteiro
+                        </button>
+
+                        {erroRemocao && (
+                            <p role="alert" className="mt-3 text-sm text-red-600">
+                                {erroRemocao}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

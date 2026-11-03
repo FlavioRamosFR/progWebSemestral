@@ -1,5 +1,5 @@
 
-import { axiosInstance } from "../api";
+import { axiosInstance, mensagemDaApi } from "../api";
 
 export interface ProdutoProps {
   nome: string;
@@ -21,7 +21,31 @@ export class FormProductService {
     } catch (erro: unknown) {
       console.error("Erro ao cadastrar produto:", erro);
 
-      throw new Error("Não foi possível cadastrar o produto.");
+      throw new Error(mensagemDaApi(erro, "Não foi possível cadastrar o produto."));
+    }
+  }
+
+  async buscarProduto(id: string) {
+    try {
+      const resposta = await axiosInstance.get(`/products/${id}`);
+
+      return resposta.data;
+    } catch (erro: unknown) {
+      console.error("Erro ao buscar produto:", erro);
+
+      throw new Error(mensagemDaApi(erro, "Não foi possível buscar o produto."));
+    }
+  }
+
+  async atualizarProduto(id: string, produto: ProdutoProps) {
+    try {
+      const resposta = await axiosInstance.put(`/products/${id}`, produto);
+
+      return resposta.data;
+    } catch (erro: unknown) {
+      console.error("Erro ao editar produto:", erro);
+
+      throw new Error(mensagemDaApi(erro, "Não foi possível editar o produto."));
     }
   }
 }
