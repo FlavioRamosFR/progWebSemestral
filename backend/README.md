@@ -1,10 +1,12 @@
 # Backend do Sistema de Vendas RGR
 
-API em Node.js (JavaScript) com Express que atende o [front do Sistema de Vendas RGR](https://github.com/KlinsmannLuiz/front_sistema_vendas_RGR). Faz o CRUD de produtos e fornecedores, registra vendas, calcula relatórios e controla o acesso por login com os perfis **ADM** (gerente/chefe) e **Funcionário**.
+API em Node.js (JavaScript) com Express que atende o [frontend](../frontend/README.md) do Sistema de Vendas RGR. Faz o CRUD de produtos e fornecedores, registra vendas, calcula relatórios e controla o acesso por login com os perfis **ADM** (gerente/chefe) e **Funcionário**.
 
 **Tecnologias:** Express 5, SQLite (`better-sqlite3`), sessão com cookie (`express-session`), senhas com `bcryptjs`, documentação com Swagger e testes com Jest e Supertest.
 
 ## Como executar
+
+Os comandos abaixo são executados dentro da pasta `backend/`.
 
 ```bash
 npm install
@@ -138,21 +140,6 @@ Cada venda guarda uma cópia do nome, da categoria e do valor do produto. Por is
 
 ## Integração com o front
 
-Crie o `.env.local` no front:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
-
-O front ainda precisa destes ajustes para usar a API por completo:
-
-| Arquivo | Ajuste |
-| --- | --- |
-| `services/api.ts` | Adicionar `withCredentials: true` ao axios, para enviar o cookie de sessão |
-| `app/componentes/login_section/Login.tsx` | Enviar o login para `POST /login` da API, com `credentials: 'include'`, em vez de `/api/login` |
-| `app/rgr/dashboard/page.tsx` | Chamar `dashboardService.registrarVenda` em `handleSale`; hoje a venda só altera a tela |
-| `app/rgr/formProduct/page.tsx` | Carregar os fornecedores de `GET /providers`; hoje usa `FORNECEDORES_EXEMPLO`, cujos ids podem não existir na API |
-| `app/rgr/provider/` | Trocar o `localStorage` pelas funções de `provider.service.ts` |
-| `app/rgr/export/page.tsx` | Trocar `RELATORIO_FICTICIO` pelas funções de `reports.service.ts` |
+O [frontend](../frontend/README.md) acessa a API pela variável `NEXT_PUBLIC_API_URL` e envia o cookie de sessão em cada requisição. O endereço autorizado pelo CORS é definido em `FRONTEND_ORIGIN`, no `.env`.
 
 O formulário de produto não tem campo de imagem, então `image` vem vazio até que um valor seja enviado em `image` ou `imagem`.
