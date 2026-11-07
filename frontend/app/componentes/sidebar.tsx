@@ -13,6 +13,7 @@ import {
     Shirt,
 } from "lucide-react";
 import { authService } from "@/services/auth/auth.service";
+import { AlertDialogLogout } from "./AlertDialogLogout";
 
 const menuItems = [
     { label: "Verificar Estoque", href: "/rgr/dashboard", icon: Home },
@@ -122,14 +123,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
             {/* Rodapé do menu */}
             <div className="shrink-0 border-t border-slate-200 px-5 py-4">
-                <button
-                    type="button"
-                    onClick={sair}
-                    className="mb-3 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[15px] font-semibold text-slate-600 transition-colors duration-200 hover:bg-red-50 hover:text-red-700"
-                >
-                    <LogOut size={20} strokeWidth={1.9} className="shrink-0" />
-                    Sair
-                </button>
+               <AlertDialogLogout />
 
                 {erroSair && (
                     <p role="alert" className="mb-3 text-xs text-red-600">

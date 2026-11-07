@@ -31,7 +31,7 @@ export default function SistemaLayout({
           toggleSidebar={toggleSidebar}
         />
         <main   id="main-content"
-                className="min-h-0 flex-1 overflow-y-auto p-6">
+                className="min-h-0 flex-1 overflow-y-auto p-6 justify-between flex flex-col">
           {children}
           <Footer />
         </main>
