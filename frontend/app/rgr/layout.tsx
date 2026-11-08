@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sidebar } from "../componentes/sidebar";
 import { Navbar } from "../componentes/navbar";
 import { Footer } from "../componentes/footer";
+import GlobalErrorHandler from "../componentes/GlobalErrorHandler";
 
 export default function SistemaLayout({
   children,
@@ -32,6 +33,7 @@ export default function SistemaLayout({
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <main id="main-content" className="p-6">
+            <GlobalErrorHandler />
             {children}
           </main>
           <Footer />
