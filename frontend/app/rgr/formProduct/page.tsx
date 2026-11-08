@@ -3,18 +3,7 @@
 
 import { Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  Package,
-  Tags,
-  DollarSign,
-  Ruler,
-  FileText,
-  Image as ImageIcon,
-  Barcode,
-  Save,
-  RotateCcw,
-  Truck,
-} from 'lucide-react';
+import { Package,Tags,DollarSign,Ruler,FileText,Image as ImageIcon,Barcode,Save,RotateCcw,Truck,} from 'lucide-react';
 import { formProductService } from '@/services/formProduct/product.service';
 import { formProductService as providerService } from '@/services/provider/provider.service';
 

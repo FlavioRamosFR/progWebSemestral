@@ -25,16 +25,17 @@ export default function SistemaLayout({
         <Sidebar onClose={toggleSidebar} />
       </div>
       
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-y-auto">
         <Navbar
           sidebarOpen={sidebarOpen}
           toggleSidebar={toggleSidebar}
         />
-        <main   id="main-content"
-                className="min-h-0 flex-1 overflow-y-auto p-6 justify-between flex flex-col">
-          {children}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <main id="main-content" className="p-6">
+            {children}
+          </main>
           <Footer />
-        </main>
+        </div>
       </div>
     </div>
   );
