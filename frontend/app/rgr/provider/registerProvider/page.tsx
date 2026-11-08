@@ -141,7 +141,10 @@ export default function CadastrarFornecedorPage() {
   }
 
   async function buscarCep() {
-    if (!formulario.cep.trim()) return;
+  const cep = formulario.cep.replace(/\D/g, '');
+
+  // Só consulta quando tiver os 8 números
+  if (cep.length !== 8) return;
     try {
       const dados = await cepService(formulario.cep);
 
