@@ -21,6 +21,8 @@ export function maskCpfCnpj(value: string): string {
 }
 
 
+
+/* Telefone: (00) 0000-0000 e (00) 00000-0000 */
 export function maskPhone(value: string): string {
   const numbers = onlyNumbers(value).slice(0, 11)
 
@@ -39,12 +41,15 @@ export function maskPhone(value: string): string {
     .replace(/(\d{5})(\d)/, "$1-$2")
 }
 
+/* CEP: 00000-000 */
 export function maskCep(value: string): string {
   return onlyNumbers(value)
     .slice(0, 8)
     .replace(/^(\d{5})(\d)/, "$1-$2")
 }
 
+
+/* Valor monetário: R$ 1.234,56 */
 export function maskCurrency(value: string): string {
   const numbers = onlyNumbers(value)
 
@@ -58,6 +63,10 @@ export function maskCurrency(value: string): string {
   })
 }
 
+/**
+ * SKU: letras maiúsculas e números.
+ * Exemplo: CAMISA001
+ */
 export function maskSku(value: string): string {
   return value
     .toUpperCase()
