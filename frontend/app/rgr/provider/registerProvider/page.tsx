@@ -4,9 +4,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Building2, Save, X, Store, Mail, Phone, MapPin,} from 'lucide-react';
+import { ArrowLeft, Building2, Save, X, Store, Mail, Phone, MapPin, } from 'lucide-react';
 import { formProductService as providerService } from '@/services/provider/provider.service';
 import { maskCep, maskCpfCnpj, maskPhone } from '@/utils/masks';
+import { cepService } from '@/services/cepService';
 
 interface Fornecedor {
   id: string;
@@ -71,26 +72,26 @@ export default function CadastrarFornecedorPage() {
       .finally(() => setCarregando(false));
   }, []);
 
-function atualizarCampo( campo: keyof FormularioFornecedor, valor: string ) {
-  let valorFormatado = valor;
+  function atualizarCampo(campo: keyof FormularioFornecedor, valor: string) {
+    let valorFormatado = valor;
 
-  switch (campo) {
-    case 'documento':
-      valorFormatado = maskCpfCnpj(valor);
-      break;
+    switch (campo) {
+      case 'documento':
+        valorFormatado = maskCpfCnpj(valor);
+        break;
 
-    case 'telefone':
-      valorFormatado = maskPhone(valor);
-      break;
+      case 'telefone':
+        valorFormatado = maskPhone(valor);
+        break;
 
-    case 'cep':
-      valorFormatado = maskCep(valor);
-      break;
+      case 'cep':
+        valorFormatado = maskCep(valor);
+        break;
+    }
+
+    setFormulario((atual) => ({ ...atual, [campo]: valorFormatado }));
+    setErro('')
   }
-
-  setFormulario((atual) => ({...atual, [campo]: valorFormatado}));
-  setErro
-}
   async function salvarFornecedor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro('');
@@ -136,6 +137,25 @@ function atualizarCampo( campo: keyof FormularioFornecedor, valor: string ) {
           : 'Não foi possível salvar o fornecedor. Tente novamente.',
       );
       setSalvando(false);
+    }
+  }
+
+  async function buscarCep() {
+    if (!formulario.cep.trim()) return;
+    try {
+      const dados = await cepService(formulario.cep);
+
+      setFormulario((atual) => ({
+        ...atual,
+        endereco: dados.logradouro || atual.endereco,
+        cidade: dados.localidade || atual.cidade,
+        estado: dados.uf || atual.estado,
+      }));
+
+      setErro('');
+
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : 'Não foi possível consultar o CEP.');
     }
   }
 
@@ -349,8 +369,15 @@ function atualizarCampo( campo: keyof FormularioFornecedor, valor: string ) {
                   type="text"
                   value={formulario.cep}
                   onChange={(e) => atualizarCampo('cep', e.target.value)}
+                  onBlur={buscarCep}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      buscarCep();
+                    }
+                  }}
                   placeholder="00000-000"
-                  maxLength={10}
+                  maxLength={9}
                   className={classeInput}
                 />
               </label>
