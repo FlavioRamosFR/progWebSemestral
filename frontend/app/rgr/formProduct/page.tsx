@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Package,Tags,DollarSign,Ruler,FileText,Image as ImageIcon,Barcode,Save,RotateCcw,Truck,} from 'lucide-react';
 import { formProductService } from '@/services/formProduct/product.service';
 import { formProductService as providerService } from '@/services/provider/provider.service';
+import { maskSku, maskCurrency } from "@/utils/masks"
 
 interface FornecedorOpcao {
   id: string;
@@ -85,18 +86,30 @@ function FormProduto() {
   const classeInput =
     'mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
 
-  function handleChange(
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) {
-    const { name, value } = e.target;
+function handleChange(
+  e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) {
+  const { name, value } = e.target;
 
-    setForm((anterior) => ({
-      ...anterior,
-      [name]: value,
-    }));
+  let valorFormatado = value;
 
-    setMensagem('');
+  switch (name) {
+    case "sku":
+      valorFormatado = maskSku(value);
+      break;
+
+    case "valor":
+      valorFormatado = maskCurrency(value);
+      break;
   }
+
+  setForm((anterior) => ({
+    ...anterior,
+    [name]: valorFormatado,
+  }));
+
+  setMensagem("");
+}
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -275,6 +288,7 @@ function FormProduto() {
                     placeholder="Ex.: CAM-001"
                     maxLength={50}
                     className={`${classeInput} pl-10`}
+                    
                   />
                 </div>
 

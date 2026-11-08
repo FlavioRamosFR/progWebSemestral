@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Building2, Save, X, Store, Mail, Phone, MapPin,} from 'lucide-react';
 import { formProductService as providerService } from '@/services/provider/provider.service';
+import { maskCep, maskCpfCnpj, maskPhone } from '@/utils/masks';
 
 interface Fornecedor {
   id: string;
@@ -70,18 +71,26 @@ export default function CadastrarFornecedorPage() {
       .finally(() => setCarregando(false));
   }, []);
 
-  function atualizarCampo(
-    campo: keyof FormularioFornecedor,
-    valor: string,
-  ) {
-    setFormulario((atual) => ({
-      ...atual,
-      [campo]: valor,
-    }));
+function atualizarCampo( campo: keyof FormularioFornecedor, valor: string ) {
+  let valorFormatado = valor;
 
-    setErro('');
+  switch (campo) {
+    case 'documento':
+      valorFormatado = maskCpfCnpj(valor);
+      break;
+
+    case 'telefone':
+      valorFormatado = maskPhone(valor);
+      break;
+
+    case 'cep':
+      valorFormatado = maskCep(valor);
+      break;
   }
 
+  setFormulario((atual) => ({...atual, [campo]: valorFormatado}));
+  setErro
+}
   async function salvarFornecedor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro('');
