@@ -15,9 +15,9 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/app/componentes/ui/alert-dialog"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/app/componentes/ui/button"
 
 export function AlertDialogLogout() {
 

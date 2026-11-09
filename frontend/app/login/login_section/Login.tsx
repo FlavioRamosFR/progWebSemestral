@@ -22,7 +22,7 @@ export function LoginSection() {
         });
 
         if (res.ok) {
-            router.push('/rgr/dashboard');
+            router.push('/rgr');
             router.refresh();
         } else {
             const data = await res.json();

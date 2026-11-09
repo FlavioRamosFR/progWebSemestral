@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { singToken } from "@/app/lib/auth";
+import { singToken } from "@/lib/auth";
 
 export async function POST(resquest: Request) {
     try {

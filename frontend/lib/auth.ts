@@ -1,5 +1,4 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { Erica_One } from 'next/font/google';
 
 const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET
