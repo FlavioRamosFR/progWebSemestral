@@ -14,20 +14,26 @@ export function LoginSection() {
         e.preventDefault();
         setErro('');
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-        if (res.ok) {
-            router.push('/rgr');
-            router.refresh();
-        } else {
-            const data = await res.json();
-            setErro(data.erro)
+            if (res.ok) {
+                router.push('/rgr');
+                router.refresh();
+            } else {
+                const data = await res.json();
+                setErro(data.erro)
+            }
+
+        } catch (erro: unknown) {
+            setErro('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
         }
+
     };
 
 
