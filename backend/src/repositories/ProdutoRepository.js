@@ -1,50 +1,57 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
-function listar() {
-  return db.prepare('SELECT * FROM produtos ORDER BY nome').all();
+// As funções usadas na venda recebem a "conexao" da transação.
+// Fora dela, usam o pool normalmente.
+
+async function listar() {
+  const [linhas] = await pool.execute('SELECT * FROM produtos ORDER BY nome');
+  return linhas;
 }
 
-function buscarPorId(id) {
-  return db.prepare('SELECT * FROM produtos WHERE id = ?').get(id);
+async function buscarPorId(id, conexao = pool) {
+  const [linhas] = await conexao.execute('SELECT * FROM produtos WHERE id = ?', [id]);
+  return linhas[0];
 }
 
-function buscarPorSku(sku) {
-  return db.prepare('SELECT * FROM produtos WHERE sku = ?').get(sku);
+async function buscarPorSku(sku) {
+  const [linhas] = await pool.execute('SELECT * FROM produtos WHERE sku = ?', [sku]);
+  return linhas[0];
 }
 
-function criar(produto) {
-  const resultado = db.prepare(`
+async function criar(produto) {
+  const [resultado] = await pool.execute(`
     INSERT INTO produtos (sku, nome, categoria, valor, quantidade, tamanho, descricao, imagem, fornecedorId)
-    VALUES (@sku, @nome, @categoria, @valor, @quantidade, @tamanho, @descricao, @imagem, @fornecedorId)
-  `).run(produto);
+    VALUES (:sku, :nome, :categoria, :valor, :quantidade, :tamanho, :descricao, :imagem, :fornecedorId)
+  `, produto);
 
-  return buscarPorId(resultado.lastInsertRowid);
+  return buscarPorId(resultado.insertId);
 }
 
-function atualizar(id, produto) {
-  db.prepare(`
+async function atualizar(id, produto) {
+  await pool.execute(`
     UPDATE produtos SET
-      sku = @sku, nome = @nome, categoria = @categoria, valor = @valor,
-      quantidade = @quantidade, tamanho = @tamanho, descricao = @descricao,
-      imagem = @imagem, fornecedorId = @fornecedorId
-    WHERE id = @id
-  `).run({ ...produto, id });
+      sku = :sku, nome = :nome, categoria = :categoria, valor = :valor,
+      quantidade = :quantidade, tamanho = :tamanho, descricao = :descricao,
+      imagem = :imagem, fornecedorId = :fornecedorId
+    WHERE id = :id
+  `, { ...produto, id });
 
   return buscarPorId(id);
 }
 
-function excluir(id) {
-  db.prepare('DELETE FROM produtos WHERE id = ?').run(id);
+async function excluir(id) {
+  await pool.execute('DELETE FROM produtos WHERE id = ?', [id]);
 }
 
 // A condição "quantidade >= ?" impede que o estoque fique negativo.
 // Retorna false quando não havia estoque suficiente.
-function reduzirEstoque(id, quantidade) {
-  const resultado = db
-    .prepare('UPDATE produtos SET quantidade = quantidade - ? WHERE id = ? AND quantidade >= ?')
-    .run(quantidade, id, quantidade);
+async function reduzirEstoque(id, quantidade, conexao = pool) {
+  const [resultado] = await conexao.execute(
+    'UPDATE produtos SET quantidade = quantidade - ? WHERE id = ? AND quantidade >= ?',
+    [quantidade, id, quantidade],
+  );
 
-  return resultado.changes > 0;
+  return resultado.affectedRows > 0;
 }
 
 module.exports = { listar, buscarPorId, buscarPorSku, criar, atualizar, excluir, reduzirEstoque };

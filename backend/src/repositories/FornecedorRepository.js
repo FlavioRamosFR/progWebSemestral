@@ -1,42 +1,45 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
-function listar() {
-  return db.prepare('SELECT * FROM fornecedores ORDER BY nome').all();
+async function listar() {
+  const [linhas] = await pool.execute('SELECT * FROM fornecedores ORDER BY nome');
+  return linhas;
 }
 
-function buscarPorId(id) {
-  return db.prepare('SELECT * FROM fornecedores WHERE id = ?').get(id);
+async function buscarPorId(id) {
+  const [linhas] = await pool.execute('SELECT * FROM fornecedores WHERE id = ?', [id]);
+  return linhas[0];
 }
 
-function criar(fornecedor) {
-  const resultado = db.prepare(`
+async function criar(fornecedor) {
+  const [resultado] = await pool.execute(`
     INSERT INTO fornecedores
       (nome, nomeFantasia, documento, telefone, email, cep, endereco, cidade, estado, observacoes)
     VALUES
-      (@nome, @nomeFantasia, @documento, @telefone, @email, @cep, @endereco, @cidade, @estado, @observacoes)
-  `).run(fornecedor);
+      (:nome, :nomeFantasia, :documento, :telefone, :email, :cep, :endereco, :cidade, :estado, :observacoes)
+  `, fornecedor);
 
-  return buscarPorId(resultado.lastInsertRowid);
+  return buscarPorId(resultado.insertId);
 }
 
-function atualizar(id, fornecedor) {
-  db.prepare(`
+async function atualizar(id, fornecedor) {
+  await pool.execute(`
     UPDATE fornecedores SET
-      nome = @nome, nomeFantasia = @nomeFantasia, documento = @documento,
-      telefone = @telefone, email = @email, cep = @cep, endereco = @endereco,
-      cidade = @cidade, estado = @estado, observacoes = @observacoes
-    WHERE id = @id
-  `).run({ ...fornecedor, id });
+      nome = :nome, nomeFantasia = :nomeFantasia, documento = :documento,
+      telefone = :telefone, email = :email, cep = :cep, endereco = :endereco,
+      cidade = :cidade, estado = :estado, observacoes = :observacoes
+    WHERE id = :id
+  `, { ...fornecedor, id });
 
   return buscarPorId(id);
 }
 
-function excluir(id) {
-  db.prepare('DELETE FROM fornecedores WHERE id = ?').run(id);
+async function excluir(id) {
+  await pool.execute('DELETE FROM fornecedores WHERE id = ?', [id]);
 }
 
-function contarProdutosVinculados(id) {
-  return db.prepare('SELECT COUNT(*) AS total FROM produtos WHERE fornecedorId = ?').get(id).total;
+async function contarProdutosVinculados(id) {
+  const [linhas] = await pool.execute('SELECT COUNT(*) AS total FROM produtos WHERE fornecedorId = ?', [id]);
+  return linhas[0].total;
 }
 
 module.exports = { listar, buscarPorId, criar, atualizar, excluir, contarProdutosVinculados };

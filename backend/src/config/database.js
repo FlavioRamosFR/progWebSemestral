@@ -1,63 +1,75 @@
-const Database = require('better-sqlite3');
-const fs = require('fs');
-const path = require('path');
-const pastaBanco = require('./pastaBanco');
+const mysql = require('mysql2/promise');
 
-fs.mkdirSync(pastaBanco, { recursive: true });
+// Fuso usado nas datas das vendas. Mato Grosso do Sul: -04:00. Brasília: -03:00.
+const FUSO_HORARIO = process.env.DB_TIMEZONE || '-04:00';
 
-const db = new Database(path.join(pastaBanco, 'app.db'));
+// SSL é exigido pela maioria dos bancos em nuvem. DB_SSL_CA recebe o certificado
+// do provedor (o conteúdo do arquivo .pem), quando ele fornece um.
+function configurarSsl() {
+  if (process.env.DB_SSL !== 'true') return undefined;
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+  return {
+    ca: process.env.DB_SSL_CA ? process.env.DB_SSL_CA.replace(/\\n/g, '\n') : undefined,
+    rejectUnauthorized: true,
+  };
+}
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    senhaHash TEXT NOT NULL,
-    perfil TEXT NOT NULL CHECK (perfil IN ('ADM', 'FUNCIONARIO'))
-  );
+// Aceita uma URL completa (DATABASE_URL), como a que os provedores fornecem,
+// ou as variáveis separadas DB_HOST, DB_PORT, DB_USER, DB_PASSWORD e DB_NAME.
+function lerConexao() {
+  if (process.env.DATABASE_URL) {
+    const url = new URL(process.env.DATABASE_URL);
 
-  CREATE TABLE IF NOT EXISTS fornecedores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    nomeFantasia TEXT NOT NULL DEFAULT '',
-    documento TEXT NOT NULL DEFAULT '',
-    telefone TEXT NOT NULL DEFAULT '',
-    email TEXT NOT NULL DEFAULT '',
-    cep TEXT NOT NULL DEFAULT '',
-    endereco TEXT NOT NULL DEFAULT '',
-    cidade TEXT NOT NULL DEFAULT '',
-    estado TEXT NOT NULL DEFAULT '',
-    observacoes TEXT NOT NULL DEFAULT ''
-  );
+    return {
+      host: url.hostname,
+      port: Number(url.port) || 3306,
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      database: url.pathname.slice(1),
+    };
+  }
 
-  CREATE TABLE IF NOT EXISTS produtos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sku TEXT UNIQUE,
-    nome TEXT NOT NULL,
-    categoria TEXT NOT NULL,
-    valor REAL NOT NULL CHECK (valor > 0),
-    quantidade INTEGER NOT NULL CHECK (quantidade >= 0),
-    tamanho TEXT NOT NULL DEFAULT '',
-    descricao TEXT NOT NULL DEFAULT '',
-    imagem TEXT NOT NULL DEFAULT '',
-    fornecedorId INTEGER REFERENCES fornecedores(id)
-  );
+  return {
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: Number(process.env.DB_PORT) || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  };
+}
 
-  -- A venda guarda uma cópia de nome, categoria e valor do produto:
-  -- assim os relatórios continuam corretos se o produto mudar ou for excluído.
-  CREATE TABLE IF NOT EXISTS vendas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    produtoId INTEGER NOT NULL,
-    nomeProduto TEXT NOT NULL,
-    categoriaProduto TEXT NOT NULL,
-    quantidade INTEGER NOT NULL CHECK (quantidade > 0),
-    valorUnitario REAL NOT NULL,
-    usuarioId INTEGER NOT NULL REFERENCES usuarios(id),
-    realizadaEm TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
-  );
-`);
+const pool = mysql.createPool({
+  ...lerConexao(),
+  ssl: configurarSsl(),
+  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
+  waitForConnections: true,
+  namedPlaceholders: true, // permite :nome nos comandos SQL
+  decimalNumbers: true, // DECIMAL volta como número, não como texto
+  dateStrings: true, // DATETIME volta como texto "AAAA-MM-DD HH:MM:SS"
+  timezone: FUSO_HORARIO,
+});
 
-module.exports = db;
+// Cada nova conexão usa o fuso definido, para que CURRENT_TIMESTAMP e DATE()
+// sigam a data local da loja, e não a do servidor em nuvem
+pool.on('connection', (conexao) => {
+  conexao.query('SET time_zone = ?', [FUSO_HORARIO]);
+});
+
+// Executa a função dentro de uma transação: ou tudo é gravado, ou nada é
+async function emTransacao(funcao) {
+  const conexao = await pool.getConnection();
+
+  try {
+    await conexao.beginTransaction();
+    const resultado = await funcao(conexao);
+    await conexao.commit();
+    return resultado;
+  } catch (erro) {
+    await conexao.rollback();
+    throw erro;
+  } finally {
+    conexao.release();
+  }
+}
+
+module.exports = { pool, emTransacao };

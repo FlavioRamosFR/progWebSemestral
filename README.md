@@ -30,8 +30,8 @@ O controle de acesso é feito no back-end: sem login a API responde 401 e, com p
 
 | Parte | Tecnologias |
 | --- | --- |
-| Back-end | Node.js, Express 5, express-session, connect-sqlite3, bcryptjs, cors, dotenv, swagger-ui-express |
-| Banco de dados | SQLite (better-sqlite3) |
+| Back-end | Node.js, Express 5, express-session, express-mysql-session, bcryptjs, helmet, express-rate-limit, cors, dotenv, swagger-ui-express |
+| Banco de dados | MySQL 8 (mysql2), compatível com MariaDB 10.4+ |
 | Front-end | Next.js 16, React 19, TypeScript, Mantine, Tailwind CSS, shadcn/ui, axios |
 | Serviço externo | ViaCEP (endereço pelo CEP) |
 | Testes | Jest e Supertest (back-end), Cypress (front-end) |
@@ -42,12 +42,12 @@ O back-end segue MVC com camadas de service e repository. Cada requisição pass
 
 ```mermaid
 flowchart TD
-    A["Front-end Next.js<br/>axios com cookie de sessão"] --> B["Rotas Express<br/>/login, /products, /providers, /reports"]
-    B --> C["Middlewares<br/>exigeLogin 401, exigePerfil 403"]
+    A["Front-end Next.js<br/>chama /api, repassado para a API"] --> B["Rotas Express<br/>/login, /products, /providers, /reports"]
+    B --> C["Middlewares<br/>rate limit 429, exigeLogin 401, exigePerfil 403"]
     C --> D["Controllers e views<br/>leem a requisição e formatam o JSON"]
     D --> E["Services e models<br/>regras de negócio, venda, relatórios, validação"]
     E --> F["Repositories (DAO)<br/>único lugar com SQL"]
-    F --> G[("SQLite<br/>app.db e sessoes.db")]
+    F --> G[("MySQL<br/>dados e sessões")]
 ```
 
 | Papel no MVC | Pastas | Responsabilidade |
@@ -56,8 +56,9 @@ flowchart TD
 | View | `views/` | Formata produtos e fornecedores no JSON enviado ao front |
 | Controller | `controllers/` | Lê a requisição, chama o service e devolve status HTTP + JSON |
 
-- **Sessão:** express-session guarda a sessão no servidor (`sessoes.db`); o navegador recebe só o cookie `connect.sid` (httpOnly, 30 minutos).
-- **CORS:** a API aceita só a origem de `FRONTEND_ORIGIN`, com `credentials: true`.
+- **Sessão:** express-session guarda a sessão no MySQL (tabela `sessions`); o navegador recebe só o cookie `connect.sid` (httpOnly, 30 minutos, só HTTPS em produção).
+- **Comunicação front → API:** o navegador chama `/api/...` no próprio site, e o Next.js repassa para a API. Assim o cookie fica no domínio do site e o `proxy.ts` consegue ler a sessão.
+- **Proteção contra abuso:** limite de 300 requisições por IP a cada 15 minutos e de 10 tentativas de login erradas; acima disso a API responde 429.
 - **Venda:** a baixa no estoque e o registro da venda ficam numa única transação, e o estoque nunca fica negativo.
 - **Front-end:** o `proxy.ts` manda as telas `/rgr` para o login quando não há sessão; erros da API abrem as páginas `/erro/<código>`.
 
@@ -67,14 +68,17 @@ Mais detalhes em [backend/README.md](backend/README.md) e [frontend/README.md](f
 
 ```text
 progWebSemestral/
+├── DEPLOY.md                  passo a passo para publicar
 ├── backend/
 │   ├── server.js              inicia a API (porta 3001)
 │   ├── .env.example
+│   ├── sql/schema.sql         estrutura do banco MySQL (rodar em produção)
+│   ├── scripts/criarBanco.js  npm run db:criar
 │   └── src/
 │       ├── app.js             CORS, sessão, Swagger e rotas
-│       ├── config/            banco, sessão, usuários iniciais, Swagger
+│       ├── config/            conexão MySQL, sessão, usuários iniciais, Swagger
 │       ├── routes/            URLs e middlewares de cada uma
-│       ├── middlewares/       exigeLogin, exigePerfil, tratamento de erros
+│       ├── middlewares/       rate limit, exigeLogin, exigePerfil, tratamento de erros
 │       ├── controllers/
 │       ├── views/
 │       ├── services/
@@ -84,6 +88,7 @@ progWebSemestral/
 │       └── test/              testes Jest + Supertest
 └── frontend/
     ├── proxy.ts               protege as telas /rgr
+    ├── next.config.ts         repassa /api para o back-end
     ├── app/                   login, telas em rgr/, páginas de erro
     ├── services/              chamadas à API e ao ViaCEP
     ├── utils/                 máscaras de CEP, CPF/CNPJ e telefone
@@ -92,7 +97,11 @@ progWebSemestral/
 
 ## Como executar localmente
 
-Pré-requisitos: Node.js 20 ou superior. Use um terminal para cada parte.
+Pré-requisitos: Node.js 20 ou superior e MySQL 8 (ou o MariaDB do XAMPP) rodando. Use um terminal para cada parte.
+
+**Banco de dados**
+
+Crie os bancos `rgr` (dados) e `rgr_teste` (testes automáticos) e um usuário com acesso aos dois. Os comandos SQL estão em [backend/README.md](backend/README.md#como-executar).
 
 **Back-end** (http://localhost:3001)
 
@@ -100,10 +109,11 @@ Pré-requisitos: Node.js 20 ou superior. Use um terminal para cada parte.
 cd backend
 npm install
 cp .env.example .env
+npm run db:criar
 npm start
 ```
 
-Antes de iniciar, preencha `SESSION_SECRET` e as senhas no `backend/.env`. Os usuários ADM e FUNCIONARIO são criados a partir desse arquivo na primeira execução.
+Antes de criar as tabelas, preencha no `backend/.env` os dados do banco, o `SESSION_SECRET` e as senhas dos usuários. O `npm run db:criar` executa o `sql/schema.sql`. Os usuários ADM e FUNCIONARIO são criados a partir do `.env` na primeira execução.
 
 **Front-end** (http://localhost:3000)
 
@@ -123,7 +133,14 @@ Depois, acesse http://localhost:3000/login.
 | `SESSION_SECRET` | backend | Texto longo e aleatório que assina o cookie |
 | `ADM_EMAIL`, `ADM_SENHA` | backend | Usuário ADM criado na primeira execução |
 | `FUNCIONARIO_EMAIL`, `FUNCIONARIO_SENHA` | backend | Usuário FUNCIONARIO criado na primeira execução |
-| `NEXT_PUBLIC_API_URL` | frontend | Endereço da API |
+| `DATABASE_URL` ou `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | backend | Conexão com o MySQL |
+| `TEST_DB_NAME` | backend | Banco usado pelos testes (`rgr_teste`) |
+| `DB_TIMEZONE` | backend | Fuso das vendas (`-04:00` para MS) |
+| `DB_SSL`, `DB_SSL_CA` | backend | SSL para bancos em nuvem |
+| `NODE_ENV`, `TRUST_PROXY` | backend | Produção: cookie só por HTTPS e quantidade de proxies |
+| `LIMITE_GERAL`, `LIMITE_LOGIN` | backend | Rate limit (padrão: 300 e 10 a cada 15 minutos) |
+| `NEXT_PUBLIC_API_URL` | frontend | Caminho que o navegador usa para a API (`/api`) |
+| `API_URL` | frontend | Endereço real da API, para onde o Next repassa `/api` |
 
 ## Credenciais de teste
 
@@ -134,10 +151,11 @@ Depois, acesse http://localhost:3000/login.
 
 ## Endpoints da API
 
-Todas as rotas usam JSON. Erros aparecem como `{ "erro": "mensagem" }`. A documentação interativa fica em `/docs` (Swagger).
+Todas as rotas usam JSON. Erros aparecem como `{ "erro": "mensagem" }`. A documentação interativa fica em `/docs` (Swagger). Pelo front, as mesmas rotas ficam em `/api/...`.
 
 | Método | Rota | Descrição | Acesso |
 | --- | --- | --- | --- |
+| GET | `/saude` | Confere se a API e o banco estão no ar | Público |
 | POST | `/login` | Inicia a sessão | Público |
 | GET | `/perfil` | Usuário logado | ADM, Funcionário |
 | POST | `/logout` | Encerra a sessão | Público |
@@ -256,7 +274,7 @@ GET /reports/sales/summary?dataInicio=2026-11-01&dataFim=2026-11-30
 
 ## Testes
 
-**Back-end** (Jest + Supertest). Não precisa de `.env`: os testes criam um banco temporário próprio.
+**Back-end** (Jest + Supertest). Os testes usam o banco `rgr_teste` (`TEST_DB_NAME`), que é esvaziado a cada execução, e se recusam a rodar em um banco cujo nome não contenha "teste".
 
 ```bash
 cd backend
@@ -273,3 +291,7 @@ npx cypress open             # modo interativo
 ```
 
 A documentação de testes (plano, casos, rastreabilidade e relatório de execução) está em [docs/](docs/).
+
+## Deploy
+
+O passo a passo para publicar o banco, a API e o front está em [DEPLOY.md](DEPLOY.md).

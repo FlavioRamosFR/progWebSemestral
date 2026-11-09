@@ -21,9 +21,9 @@ function lerPeriodo({ dataInicio, dataFim } = {}) {
   return { dataInicio, dataFim };
 }
 
-function calcularResumo(filtro) {
+async function calcularResumo(filtro) {
   const periodo = lerPeriodo(filtro);
-  const { faturamentoTotal, vendasRealizadas, itensVendidos } = repository.totaisDoPeriodo(periodo);
+  const { faturamentoTotal, vendasRealizadas, itensVendidos } = await repository.totaisDoPeriodo(periodo);
 
   return {
     faturamentoTotal: arredondar(faturamentoTotal),
@@ -34,11 +34,12 @@ function calcularResumo(filtro) {
   };
 }
 
-function calcularProdutosMaisVendidos(filtro) {
+async function calcularProdutosMaisVendidos(filtro) {
   const periodo = lerPeriodo(filtro);
+  const produtos = await repository.produtosMaisVendidos(periodo);
 
   // A consulta já vem em ordem decrescente de quantidade: a posição é o índice + 1
-  return repository.produtosMaisVendidos(periodo).map((produto, indice) => ({
+  return produtos.map((produto, indice) => ({
     id: produto.id,
     nome: produto.nome,
     categoria: produto.categoria,
@@ -48,9 +49,9 @@ function calcularProdutosMaisVendidos(filtro) {
   }));
 }
 
-function calcularAnalise(filtro) {
-  const resumo = calcularResumo(filtro);
-  const [maisVendido] = calcularProdutosMaisVendidos(filtro);
+async function calcularAnalise(filtro) {
+  const resumo = await calcularResumo(filtro);
+  const [maisVendido] = await calcularProdutosMaisVendidos(filtro);
   const quantidadeVendida = maisVendido ? maisVendido.quantidadeVendida : 0;
 
   return {
@@ -64,10 +65,10 @@ function calcularAnalise(filtro) {
   };
 }
 
-function gerarRelatorioCompleto(filtro) {
+async function gerarRelatorioCompleto(filtro) {
   const { dataInicio, dataFim } = lerPeriodo(filtro);
-  const resumo = calcularResumo(filtro);
-  const analise = calcularAnalise(filtro);
+  const resumo = await calcularResumo(filtro);
+  const analise = await calcularAnalise(filtro);
 
   return {
     id: `${dataInicio}_${dataFim}`,
@@ -78,7 +79,7 @@ function gerarRelatorioCompleto(filtro) {
     quantidadeVendida: analise.quantidadeVendida,
     percentualVendas: analise.percentualVendas,
     quantidadeVendas: analise.quantidadeVendas,
-    produtosMaisVendidos: calcularProdutosMaisVendidos(filtro),
+    produtosMaisVendidos: await calcularProdutosMaisVendidos(filtro),
   };
 }
 

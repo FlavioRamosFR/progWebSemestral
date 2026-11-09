@@ -1,16 +1,20 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
-function contarUsuarios() {
-  return db.prepare('SELECT COUNT(*) AS total FROM usuarios').get().total;
+async function contarUsuarios() {
+  const [linhas] = await pool.execute('SELECT COUNT(*) AS total FROM usuarios');
+  return linhas[0].total;
 }
 
-function buscarPorEmail(email) {
-  return db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
+async function buscarPorEmail(email) {
+  const [linhas] = await pool.execute('SELECT * FROM usuarios WHERE email = ?', [email]);
+  return linhas[0];
 }
 
-function criarUsuario({ nome, email, senhaHash, perfil }) {
-  db.prepare('INSERT INTO usuarios (nome, email, senhaHash, perfil) VALUES (?, ?, ?, ?)')
-    .run(nome, email.toLowerCase(), senhaHash, perfil);
+async function criarUsuario({ nome, email, senhaHash, perfil }) {
+  await pool.execute(
+    'INSERT INTO usuarios (nome, email, senhaHash, perfil) VALUES (?, ?, ?, ?)',
+    [nome, email.toLowerCase(), senhaHash, perfil],
+  );
 }
 
 module.exports = { contarUsuarios, buscarPorEmail, criarUsuario };

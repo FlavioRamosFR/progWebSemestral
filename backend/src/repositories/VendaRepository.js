@@ -1,31 +1,35 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 
-const FILTRO_PERIODO = 'date(realizadaEm) BETWEEN @dataInicio AND @dataFim';
+const FILTRO_PERIODO = 'DATE(realizadaEm) BETWEEN :dataInicio AND :dataFim';
 
-function registrar({ produto, quantidade, usuarioId }) {
-  const resultado = db.prepare(`
+// Recebe a "conexao" da transação da venda
+async function registrar({ produto, quantidade, usuarioId }, conexao = pool) {
+  const [resultado] = await conexao.execute(`
     INSERT INTO vendas (produtoId, nomeProduto, categoriaProduto, quantidade, valorUnitario, usuarioId)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(produto.id, produto.nome, produto.categoria, quantidade, produto.valor, usuarioId);
+  `, [produto.id, produto.nome, produto.categoria, quantidade, produto.valor, usuarioId]);
 
-  return db.prepare('SELECT * FROM vendas WHERE id = ?').get(resultado.lastInsertRowid);
+  const [linhas] = await conexao.execute('SELECT * FROM vendas WHERE id = ?', [resultado.insertId]);
+  return linhas[0];
 }
 
 // Totais do período: as somas e a contagem que alimentam o resumo
-function totaisDoPeriodo(periodo) {
-  return db.prepare(`
+async function totaisDoPeriodo(periodo) {
+  const [linhas] = await pool.execute(`
     SELECT
       COALESCE(SUM(quantidade * valorUnitario), 0) AS faturamentoTotal,
       COUNT(*) AS vendasRealizadas,
       COALESCE(SUM(quantidade), 0) AS itensVendidos
     FROM vendas
     WHERE ${FILTRO_PERIODO}
-  `).get(periodo);
+  `, periodo);
+
+  return linhas[0];
 }
 
 // Vendas agrupadas por produto, do mais vendido para o menos vendido
-function produtosMaisVendidos(periodo) {
-  return db.prepare(`
+async function produtosMaisVendidos(periodo) {
+  const [linhas] = await pool.execute(`
     SELECT
       produtoId AS id,
       MAX(nomeProduto) AS nome,
@@ -36,7 +40,9 @@ function produtosMaisVendidos(periodo) {
     WHERE ${FILTRO_PERIODO}
     GROUP BY produtoId
     ORDER BY quantidadeVendida DESC, faturamento DESC, nome
-  `).all(periodo);
+  `, periodo);
+
+  return linhas;
 }
 
 module.exports = { registrar, totaisDoPeriodo, produtosMaisVendidos };
