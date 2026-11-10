@@ -73,9 +73,12 @@ export function Navbar({ sidebarOpen, toggleSidebar }: NavbarProps) {
               {nomePerfil}
             </span>
 
-            <span className="hidden max-w-40 truncate text-xs opacity-75 lg:block">
-              {usuarioSessao.nome}
-            </span>
+            {ehAdmin &&
+              <span className="hidden max-w-40 truncate text-xs opacity-75 lg:block">
+                {usuarioSessao.nome}
+              </span>
+            }
+
           </div>
         </div>
       )}

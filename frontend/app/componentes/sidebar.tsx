@@ -2,34 +2,120 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Home,
   Users,
   FileTextIcon,
-  ChevronLeft,
   LogOut,
   Shirt,
 } from "lucide-react";
+
 import { authService } from "@/services/auth/auth.service";
 import { AlertDialogLogout } from "./AlertDialogLogout";
-
-const menuItems = [
-  { label: "Verificar Estoque", href: "/rgr/dashboard", icon: Home },
-  { label: "Relatorio", href: "/rgr/export", icon: FileTextIcon },
-  { label: "Fornecedor", href: "/rgr/provider", icon: Users },
-  { label: "Cadastrar Produto", href: "/rgr/formProduct", icon: Shirt },
-];
 
 interface SidebarProps {
   onClose: () => void;
 }
 
+interface RespostaPerfil {
+  perfil?: string;
+  usuario?: {
+    perfil?: string;
+  };
+  data?: {
+    perfil?: string;
+    usuario?: {
+      perfil?: string;
+    };
+  };
+}
+
+const menuItems = [
+  {
+    label: "Verificar Estoque",
+    href: "/rgr/dashboard",
+    icon: Home,
+    apenasAdmin: false,
+  },
+  {
+    label: "Relatório",
+    href: "/rgr/export",
+    icon: FileTextIcon,
+    apenasAdmin: true,
+  },
+  {
+    label: "Fornecedor",
+    href: "/rgr/provider",
+    icon: Users,
+    apenasAdmin: true,
+  },
+  {
+    label: "Cadastrar Produto",
+    href: "/rgr/formProduct",
+    icon: Shirt,
+    apenasAdmin: true,
+  },
+];
+
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [erroSair, setErroSair] = useState("");
 
+  const [erroSair, setErroSair] = useState("");
+  const [ehAdmin, setEhAdmin] = useState(false);
+  const [verificandoPerfil, setVerificandoPerfil] = useState(true);
+
+  // Verifica o perfil do usuário ao carregar o Sidebar.
+  useEffect(() => {
+    let ativo = true;
+
+    async function verificarPerfil() {
+      try {
+        const resposta = (await authService.obterPerfil()) as RespostaPerfil;
+
+        const usuario =
+          resposta.usuario ??
+          resposta.data?.usuario ??
+          resposta.data ??
+          resposta;
+
+        const perfil = String(usuario.perfil ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim()
+          .toUpperCase();
+
+        const administrador = [
+          "ADM",
+          "ADMIN",
+          "ADMINISTRADOR",
+        ].includes(perfil);
+
+        if (ativo) {
+          setEhAdmin(administrador);
+        }
+      } catch {
+        // Se não conseguir verificar o perfil,
+        // mantém as opções administrativas bloqueadas.
+        if (ativo) {
+          setEhAdmin(false);
+        }
+      } finally {
+        if (ativo) {
+          setVerificandoPerfil(false);
+        }
+      }
+    }
+
+    verificarPerfil();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  // Realiza o logout.
   async function sair() {
     setErroSair("");
 
@@ -38,21 +124,21 @@ export function Sidebar({ onClose }: SidebarProps) {
       router.push("/login");
     } catch (erro) {
       setErroSair(
-        erro instanceof Error ? erro.message : "Não foi possível sair.",
+        erro instanceof Error ? erro.message : "Não foi possível sair."
       );
     }
   }
 
   return (
     <aside
-      className="flex h-screen w-[250px] shrink-0
-            flex-col border-r border-slate-200 bg-white"
+      className="flex h-screen w-[250px] shrink-0 flex-col border-r border-slate-200 bg-white"
     >
       {/* Logo */}
       <div className="flex h-24 shrink-0 items-center justify-between px-5">
         <Link
           href="/"
           aria-label="Página inicial"
+          onClick={onClose}
           className="flex items-center gap-3"
         >
           <svg
@@ -90,26 +176,69 @@ export function Sidebar({ onClose }: SidebarProps) {
               pathname === item.href ||
               (item.href !== "/" && pathname.startsWith(`${item.href}/`));
 
+            // Verifica se a opção deve ficar bloqueada.
+            const bloqueado =
+              item.apenasAdmin && (verificandoPerfil || !ehAdmin);
+
+            const classeMenu = `
+              flex min-h-[56px] items-center
+              gap-3 rounded-lg px-4
+              transition-colors duration-200
+              ${
+                bloqueado
+                  ? "cursor-not-allowed bg-slate-50 font-semibold text-slate-400 opacity-60"
+                  : active
+                    ? "bg-blue-50 font-bold text-[#101d43]"
+                    : "font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }
+            `;
+
             return (
               <li key={item.label}>
-                <Link
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex min-h-[56px] items-center
-                                    gap-3 rounded-lg px-4
-                                    transition-colors duration-200
-                                    ${
-                                      active
-                                        ? "bg-blue-50 font-bold text-[#101d43]"
-                                        : "font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                    }`}
-                >
-                  <Icon size={23} strokeWidth={1.9} className="shrink-0" />
+                {bloqueado ? (
+                  // Opção bloqueada: não possui link nem permite navegação.
+                  <div
+                    aria-disabled="true"
+                    title={
+                      verificandoPerfil
+                        ? "Verificando permissões..."
+                        : "Disponível apenas para administradores"
+                    }
+                    className={classeMenu}
+                  >
+                    <Icon
+                      size={23}
+                      strokeWidth={1.9}
+                      className="shrink-0"
+                    />
 
-                  <span className="whitespace-nowrap text-[15px]">
-                    {item.label}
-                  </span>
-                </Link>
+                    <span className="whitespace-nowrap text-[15px]">
+                      {item.label}
+                    </span>
+
+                    <span className="ml-auto rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+                      ADM
+                    </span>
+                  </div>
+                ) : (
+                  // Opção liberada: permite navegação.
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
+                    className={classeMenu}
+                  >
+                    <Icon
+                      size={23}
+                      strokeWidth={1.9}
+                      className="shrink-0"
+                    />
+
+                    <span className="whitespace-nowrap text-[15px]">
+                      {item.label}
+                    </span>
+                  </Link>
+                )}
               </li>
             );
           })}
@@ -126,9 +255,13 @@ export function Sidebar({ onClose }: SidebarProps) {
           </p>
         )}
 
-        <p className="text-xs text-slate-500">Sistema de Estoque</p>
+        <p className="text-xs text-slate-500">
+          Sistema de Estoque
+        </p>
 
-        <p className="mt-1 text-sm font-semibold text-slate-700">RGR</p>
+        <p className="mt-1 text-sm font-semibold text-slate-700">
+          RGR
+        </p>
       </div>
     </aside>
   );
