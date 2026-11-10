@@ -52,11 +52,9 @@ export function maskCep(value: string): string {
 /* Valor monetário: R$ 1.234,56 */
 export function maskCurrency(value: string): string {
   const numbers = onlyNumbers(value)
-
   if (!numbers) return ""
 
   const cents = Number(numbers) / 100
-
   return cents.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",

@@ -65,8 +65,8 @@ function FormProduto() {
         setForm({
           nome: produto.nome,
           categoria: produto.categoria,
-          sku: produto.sku ?? '',
-          valor: String(produto.valor).replace('.', ','),
+          sku: maskSku(produto.sku ?? ''),
+          valor: maskCurrency(String(Math.round(Number(produto.valor) * 100))),
           quantidade: String(produto.quantidade),
           fornecedorId: produto.fornecedorId ?? '',
           tamanho: produto.tamanho,
@@ -114,7 +114,7 @@ function FormProduto() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const valor = converterValor(form.valor.replace(',', '.'));
+    const valor = Number(form.valor.replace(/\D/g, "")) / 100;
     const quantidade = Number(form.quantidade);
 
     if (!form.nome.trim() || !form.categoria) {
