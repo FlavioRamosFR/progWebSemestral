@@ -17,8 +17,8 @@ function listarFornecedores() {
   return repository.listar();
 }
 
-function obterFornecedor(id) {
-  const fornecedor = repository.buscarPorId(id);
+async function obterFornecedor(id) {
+  const fornecedor = await repository.buscarPorId(id);
 
   if (!fornecedor) {
     throw new HttpError(404, 'Fornecedor não encontrado');
@@ -31,19 +31,19 @@ function criarFornecedor(dados) {
   return repository.criar(prepararDados(dados));
 }
 
-function atualizarFornecedor(id, dados) {
-  obterFornecedor(id);
+async function atualizarFornecedor(id, dados) {
+  await obterFornecedor(id);
   return repository.atualizar(id, prepararDados(dados));
 }
 
-function excluirFornecedor(id) {
-  obterFornecedor(id);
+async function excluirFornecedor(id) {
+  await obterFornecedor(id);
 
-  if (repository.contarProdutosVinculados(id) > 0) {
+  if (await repository.contarProdutosVinculados(id) > 0) {
     throw new HttpError(409, 'Fornecedor possui produtos vinculados');
   }
 
-  repository.excluir(id);
+  await repository.excluir(id);
 }
 
 module.exports = {

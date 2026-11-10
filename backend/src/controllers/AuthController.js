@@ -2,9 +2,17 @@ const service = require('../services/AuthService');
 const HttpError = require('../utils/HttpError');
 
 // O front envia username e password; email e senha também são aceitos
-function login(req, res, next) {
+async function login(req, res, next) {
   const { username, email, password, senha } = req.body ?? {};
-  const usuario = service.autenticar(username ?? email, password ?? senha);
+
+  let usuario;
+  try {
+    usuario = await service.autenticar(username ?? email, password ?? senha);
+  } catch (erro) {
+    // O IP no log ajuda a conferir, em produção, se o rate limit enxerga o visitante real
+    if (process.env.NODE_ENV !== 'test') console.warn(`Login recusado para o IP ${req.ip}`);
+    throw erro;
+  }
 
   // Gera um novo id de sessão no login para evitar o roubo de uma sessão anterior
   req.session.regenerate((erro) => {

@@ -12,7 +12,7 @@ Os comandos abaixo são executados dentro da pasta `frontend/`, com a API já ro
 npm install
 ```
 
-Copie o `.env.example` para `.env.local`. Ele aponta para a API em `http://localhost:3001`.
+Copie o `.env.example` para `.env.local`. Ele aponta para a API em `http://localhost:3001` (`API_URL`).
 
 ```bash
 npm run dev
@@ -39,4 +39,12 @@ services/
   export/              relatórios
 ```
 
-O cookie de sessão é enviado à API pela opção `withCredentials` em `services/api.ts`.
+## Comunicação com a API
+
+O navegador nunca chama o endereço da API diretamente. Ele chama `/api/...` no próprio site (`NEXT_PUBLIC_API_URL=/api`), e o `next.config.ts` repassa a chamada para a API (`API_URL`).
+
+Isso tem duas vantagens:
+- O cookie de login fica no domínio do site, então o `proxy.ts` consegue saber se há alguém logado antes de abrir as telas de `/rgr`.
+- Em produção, o front e a API podem ficar em provedores diferentes sem problemas de CORS ou de cookies bloqueados.
+
+Como o `next.config.ts` é lido no build, depois de mudar o `API_URL` em produção é preciso fazer um novo deploy.

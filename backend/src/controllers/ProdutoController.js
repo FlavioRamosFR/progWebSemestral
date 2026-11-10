@@ -3,39 +3,40 @@ const { formatarProduto } = require('../views/produtoView');
 const lerId = require('../utils/lerId');
 
 // O dashboard do front lê a lista em resposta.data
-function listar(req, res) {
-  res.status(200).json({ data: service.listarProdutos().map(formatarProduto) });
+async function listar(req, res) {
+  const produtos = await service.listarProdutos();
+  res.status(200).json({ data: produtos.map(formatarProduto) });
 }
 
-function buscar(req, res) {
-  res.status(200).json(formatarProduto(service.obterProduto(lerId(req))));
+async function buscar(req, res) {
+  res.status(200).json(formatarProduto(await service.obterProduto(lerId(req))));
 }
 
-function criar(req, res) {
-  res.status(201).json(formatarProduto(service.criarProduto(req.body)));
+async function criar(req, res) {
+  res.status(201).json(formatarProduto(await service.criarProduto(req.body)));
 }
 
-function atualizar(req, res) {
-  res.status(200).json(formatarProduto(service.atualizarProduto(lerId(req), req.body)));
+async function atualizar(req, res) {
+  res.status(200).json(formatarProduto(await service.atualizarProduto(lerId(req), req.body)));
 }
 
 // DELETE /products/1?quantidade=4 -> retira 4 unidades do estoque
 // DELETE /products/1              -> exclui o produto
-function excluir(req, res) {
+async function excluir(req, res) {
   const id = lerId(req);
   const quantidade = req.query.quantidade ?? req.body?.quantidade;
 
   if (quantidade === undefined) {
-    service.excluirProduto(id);
+    await service.excluirProduto(id);
     return res.status(204).send();
   }
 
-  const produto = service.removerQuantidade(id, Number(quantidade));
+  const produto = await service.removerQuantidade(id, Number(quantidade));
   res.status(200).json(formatarProduto(produto));
 }
 
-function registrarVenda(req, res) {
-  const { produto, venda } = service.registrarVenda(
+async function registrarVenda(req, res) {
+  const { produto, venda } = await service.registrarVenda(
     lerId(req),
     Number(req.body?.quantidadeVendida),
     req.session.usuario.id,

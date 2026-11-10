@@ -1,11 +1,11 @@
-const db = require('../config/database');
+const { emTransacao } = require('../config/database');
 const repository = require('../repositories/ProdutoRepository');
 const fornecedorRepository = require('../repositories/FornecedorRepository');
 const vendaRepository = require('../repositories/VendaRepository');
 const { normalizarProduto, validarProduto, ehInteiroPositivo } = require('../models/Produto');
 const HttpError = require('../utils/HttpError');
 
-function prepararDados(dados, idAtual = null) {
+async function prepararDados(dados, idAtual = null) {
   const produto = normalizarProduto(dados);
   const erros = validarProduto(produto);
 
@@ -13,11 +13,11 @@ function prepararDados(dados, idAtual = null) {
     throw new HttpError(400, erros.join('; '));
   }
 
-  if (produto.fornecedorId !== null && !fornecedorRepository.buscarPorId(produto.fornecedorId)) {
+  if (produto.fornecedorId !== null && !await fornecedorRepository.buscarPorId(produto.fornecedorId)) {
     throw new HttpError(400, 'Fornecedor não encontrado');
   }
 
-  const mesmoSku = produto.sku && repository.buscarPorSku(produto.sku);
+  const mesmoSku = produto.sku && await repository.buscarPorSku(produto.sku);
   if (mesmoSku && mesmoSku.id !== idAtual) {
     throw new HttpError(409, 'Já existe um produto com este SKU');
   }
@@ -29,8 +29,8 @@ function listarProdutos() {
   return repository.listar();
 }
 
-function obterProduto(id) {
-  const produto = repository.buscarPorId(id);
+async function obterProduto(id, conexao) {
+  const produto = await repository.buscarPorId(id, conexao);
 
   if (!produto) {
     throw new HttpError(404, 'Produto não encontrado');
@@ -39,48 +39,50 @@ function obterProduto(id) {
   return produto;
 }
 
-function criarProduto(dados) {
-  return repository.criar(prepararDados(dados));
+async function criarProduto(dados) {
+  return repository.criar(await prepararDados(dados));
 }
 
-function atualizarProduto(id, dados) {
-  obterProduto(id);
-  return repository.atualizar(id, prepararDados(dados, id));
+async function atualizarProduto(id, dados) {
+  await obterProduto(id);
+  return repository.atualizar(id, await prepararDados(dados, id));
 }
 
-function excluirProduto(id) {
-  obterProduto(id);
-  repository.excluir(id);
+async function excluirProduto(id) {
+  await obterProduto(id);
+  await repository.excluir(id);
 }
 
-function retirarDoEstoque(id, quantidade) {
+async function retirarDoEstoque(id, quantidade, conexao) {
   if (!ehInteiroPositivo(quantidade)) {
     throw new HttpError(400, 'A quantidade deve ser um número inteiro maior que zero');
   }
 
-  const produto = obterProduto(id);
+  const produto = await obterProduto(id, conexao);
 
-  if (!repository.reduzirEstoque(id, quantidade)) {
+  if (!await repository.reduzirEstoque(id, quantidade, conexao)) {
     throw new HttpError(400, `Estoque insuficiente: há ${produto.quantidade} unidade(s) disponível(is)`);
   }
 }
 
 // Remove só a quantidade informada (ex.: 4 de 30 camisetas). O produto continua
 // cadastrado mesmo se o estoque chegar a zero. Isso não conta como venda.
-function removerQuantidade(id, quantidade) {
-  retirarDoEstoque(id, quantidade);
+async function removerQuantidade(id, quantidade) {
+  await retirarDoEstoque(id, quantidade);
   return obterProduto(id);
 }
 
 // A transação garante as duas operações juntas: baixa no estoque e registro da venda
-const registrarVenda = db.transaction((id, quantidade, usuarioId) => {
-  retirarDoEstoque(id, quantidade);
+function registrarVenda(id, quantidade, usuarioId) {
+  return emTransacao(async (conexao) => {
+    await retirarDoEstoque(id, quantidade, conexao);
 
-  const produto = obterProduto(id);
-  const venda = vendaRepository.registrar({ produto, quantidade, usuarioId });
+    const produto = await obterProduto(id, conexao);
+    const venda = await vendaRepository.registrar({ produto, quantidade, usuarioId }, conexao);
 
-  return { produto, venda };
-});
+    return { produto, venda };
+  });
+}
 
 module.exports = {
   listarProdutos,

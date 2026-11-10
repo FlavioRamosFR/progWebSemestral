@@ -1,9 +1,13 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+// Configura os testes para usar o banco de TESTE (rgr_teste), nunca o banco principal
+require('dotenv').config({ quiet: true });
 
-// Cada arquivo de teste roda com um banco próprio e vazio, em uma pasta temporária
-process.env.PASTA_BANCO = fs.mkdtempSync(path.join(os.tmpdir(), 'rgr-teste-'));
+if (process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+} else {
+  delete process.env.DATABASE_URL;
+  process.env.DB_NAME = process.env.TEST_DB_NAME || 'rgr_teste';
+}
+
 process.env.SESSION_SECRET = 'segredo-dos-testes';
 process.env.ADM_EMAIL = 'adm@teste.com';
 process.env.ADM_SENHA = 'senha-adm';

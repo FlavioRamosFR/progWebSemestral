@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const { logarComoAdm, PRODUTO_VALIDO } = require('./auxiliares');
 
 const OUTUBRO = 'dataInicio=2026-10-01&dataFim=2026-10-31';
@@ -8,10 +8,10 @@ let adm;
 
 // Insere a venda direto no banco para controlar a data
 function inserirVenda(produto, quantidade, realizadaEm) {
-  db.prepare(`
+  return pool.execute(`
     INSERT INTO vendas (produtoId, nomeProduto, categoriaProduto, quantidade, valorUnitario, usuarioId, realizadaEm)
     VALUES (?, ?, ?, ?, ?, 1, ?)
-  `).run(produto.id, produto.nome, produto.categoria, quantidade, produto.valor, realizadaEm);
+  `, [produto.id, produto.nome, produto.categoria, quantidade, produto.valor, realizadaEm]);
 }
 
 beforeAll(async () => {
@@ -22,14 +22,14 @@ beforeAll(async () => {
   const short = (await adm.post('/products').send({ ...PRODUTO_VALIDO, sku: 'C', nome: 'Short', categoria: 'Short', valor: 30 })).body;
 
   // Outubro: 4 vendas, 10 itens
-  inserirVenda(camiseta, 3, '2026-10-01 00:00:00'); // 150 (primeiro instante do período)
-  inserirVenda(camiseta, 3, '2026-10-15 12:00:00'); // 150
-  inserirVenda(calca, 2, '2026-10-20 10:00:00'); //    200
-  inserirVenda(short, 2, '2026-10-31 23:59:59'); //     60 (último instante do período)
+  await inserirVenda(camiseta, 3, '2026-10-01 00:00:00'); // 150 (primeiro instante do período)
+  await inserirVenda(camiseta, 3, '2026-10-15 12:00:00'); // 150
+  await inserirVenda(calca, 2, '2026-10-20 10:00:00'); //    200
+  await inserirVenda(short, 2, '2026-10-31 23:59:59'); //     60 (último instante do período)
 
   // Fora do período: não pode entrar nas contas
-  inserirVenda(calca, 50, '2026-09-30 23:59:59');
-  inserirVenda(calca, 50, '2026-11-01 00:00:00');
+  await inserirVenda(calca, 50, '2026-09-30 23:59:59');
+  await inserirVenda(calca, 50, '2026-11-01 00:00:00');
 });
 
 test('summary calcula os totais do período', async () => {
@@ -111,7 +111,7 @@ test.each([
 });
 
 test('uma venda feita pela API entra no relatório do dia e continua após excluir o produto', async () => {
-  const hoje = db.prepare("SELECT date('now', 'localtime') AS data").get().data;
+  const [[{ hoje }]] = await pool.query('SELECT CURDATE() AS hoje');
   const periodo = `dataInicio=${hoje}&dataFim=${hoje}`;
 
   const produto = (await adm.post('/products').send({ ...PRODUTO_VALIDO, sku: 'D', nome: 'Meia', valor: 10 })).body;
