@@ -3,7 +3,7 @@
 
 import { Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Package,Tags,DollarSign,Ruler,FileText,Image as ImageIcon,Barcode,Save,RotateCcw,Truck,} from 'lucide-react';
+import { Package, Tags, DollarSign, Ruler, FileText, Image as ImageIcon, Barcode, Save, RotateCcw, Truck, } from 'lucide-react';
 import { formProductService } from '@/services/formProduct/product.service';
 import { formProductService as providerService } from '@/services/provider/provider.service';
 import { maskSku, maskCurrency } from "@/utils/masks"
@@ -86,35 +86,35 @@ function FormProduto() {
   const classeInput =
     'mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
 
-function handleChange(
-  e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-) {
-  const { name, value } = e.target;
+  function handleChange(
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) {
+    const { name, value } = e.target;
 
-  let valorFormatado = value;
+    let valorFormatado = value;
 
-  switch (name) {
-    case "sku":
-      valorFormatado = maskSku(value);
-      break;
+    switch (name) {
+      case "sku":
+        valorFormatado = maskSku(value);
+        break;
 
-    case "valor":
-      valorFormatado = maskCurrency(value);
-      break;
+      case "valor":
+        valorFormatado = maskCurrency(value);
+        break;
+    }
+
+    setForm((anterior) => ({
+      ...anterior,
+      [name]: valorFormatado,
+    }));
+
+    setMensagem("");
   }
-
-  setForm((anterior) => ({
-    ...anterior,
-    [name]: valorFormatado,
-  }));
-
-  setMensagem("");
-}
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const valor = Number(form.valor.replace(',', '.'));
+    const valor = converterValor(form.valor.replace(',', '.'));
     const quantidade = Number(form.quantidade);
 
     if (!form.nome.trim() || !form.categoria) {
@@ -171,6 +171,15 @@ function handleChange(
       );
     }
 
+  }
+
+  function converterValor(valor: string): number {
+    const valorFormatado = valor
+      .replace(/[^\d,.-]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    return Number(valorFormatado);
   }
 
   function limparCampos() {
@@ -288,7 +297,7 @@ function handleChange(
                     placeholder="Ex.: CAM-001"
                     maxLength={50}
                     className={`${classeInput} pl-10`}
-                    
+
                   />
                 </div>
 
@@ -325,10 +334,6 @@ function handleChange(
                 </label>
 
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
-                    R$
-                  </span>
-
                   <input
                     id="valor"
                     name="valor"
@@ -338,7 +343,7 @@ function handleChange(
                     onChange={handleChange}
                     placeholder="0,00"
                     required
-                    className={`${classeInput} pl-11`}
+                    className={`${classeInput}`}
                   />
                 </div>
               </div>

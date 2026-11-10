@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Boxes, ChevronLeft, ChevronRight, Package, Pencil, Search, Shirt, ShoppingCart, Trash2, X, } from "lucide-react";
 import { DashboardProduct, dashboardService } from "@/services/dashboard/dashboard.service";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 6;
 
@@ -50,6 +51,13 @@ export default function DashboardPage() {
     const [produtoRemovendo, setProdutoRemovendo] = useState<DashboardProduct | null>(null);
     const [quantidadeRemover, setQuantidadeRemover] = useState("1");
     const [erroRemocao, setErroRemocao] = useState("");
+    const [quantidadesVenda, setQuantidadesVenda] = useState<Record<number, string>>({});
+    const [produtoVendendo, setProdutoVendendo] = useState<number | null>(null);
+    const [mensagemVenda, setMensagemVenda] = useState<{
+        produtoId: number;
+        texto: string;
+        tipo: "sucesso" | "erro";
+    } | null>(null);
 
     useEffect(() => {
         let componenteAtivo = true;
@@ -133,20 +141,61 @@ export default function DashboardPage() {
         setCurrentPage(page);
     };
 
-    // Registra a venda de uma unidade
-    const handleSale = async (productId: number) => {
+    // Registra a quantidade informada em uma única requisição.
+    const handleSale = async (product: DashboardProduct) => {
+        const quantidade = Number(quantidadesVenda[product.id] ?? "1");
+
+        if (!Number.isInteger(quantidade) || quantidade < 1) {
+            setMensagemVenda({
+                produtoId: product.id,
+                texto: "Informe uma quantidade inteira maior que zero.",
+                tipo: "erro",
+            });
+            return;
+        }
+
+        if (quantidade > product.quantity) {
+            setMensagemVenda({
+                produtoId: product.id,
+                texto: `Você possui apenas ${product.quantity} unidade(s) em estoque.`,
+                tipo: "erro",
+            });
+            return;
+        }
+
         try {
-            const resposta = await dashboardService.registrarVenda(productId, 1);
+            setProdutoVendendo(product.id);
+            setMensagemVenda(null);
+
+            const resposta = await dashboardService.registrarVenda(product.id, quantidade);
 
             setProducts((previousProducts) =>
-                previousProducts.map((product) =>
-                    product.id === productId
-                        ? { ...product, quantity: resposta.produto.quantidade }
-                        : product
+                previousProducts.map((item) =>
+                    item.id === product.id
+                        ? { ...item, quantity: resposta.produto.quantidade }
+                        : item
                 )
             );
+
+            setQuantidadesVenda((previous) => ({
+                ...previous,
+                [product.id]: "1",
+            }));
+
+            toast.success(
+                `${quantidade} ${quantidade === 1 ? "unidade registrada" : "unidades registradas"} como venda.`,
+                {
+                    description: product.name,
+                }
+            );
         } catch (error: unknown) {
-            setError(error instanceof Error ? error.message : "Não foi possível registrar a venda.");
+            setMensagemVenda({
+                produtoId: product.id,
+                texto: error instanceof Error ? error.message : "Não foi possível registrar a venda.",
+                tipo: "erro",
+            });
+        } finally {
+            setProdutoVendendo(null);
         }
     };
 
@@ -378,7 +427,7 @@ export default function DashboardPage() {
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                                    <div className="grid grid-cols-2 items-end gap-3 border-t border-slate-100 pt-3">
                                         <div>
                                             <p className="text-xs text-slate-500">
                                                 Quantidade disponível
@@ -392,21 +441,60 @@ export default function DashboardPage() {
                                                 </span>
                                             </p>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleSale(product.id)
-                                            }
-                                            disabled={product.quantity === 0}
-                                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#101d43] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#1c326b] disabled:cursor-not-allowed disabled:bg-slate-300"
-                                        >
-                                            <ShoppingCart size={16} />
 
-                                            {product.quantity === 0
-                                                ? "Esgotado"
-                                                : "Registrar venda"}
-                                        </button>
+                                        <div>
+                                            <label
+                                                htmlFor={`quantidade-venda-${product.id}`}
+                                                className="mb-1 block text-xs font-medium text-slate-600"
+                                            >
+                                                Quantidade a vender
+                                            </label>
+                                            <input
+                                                id={`quantidade-venda-${product.id}`}
+                                                type="number"
+                                                min="1"
+                                                max={product.quantity}
+                                                step="1"
+                                                inputMode="numeric"
+                                                value={quantidadesVenda[product.id] ?? "1"}
+                                                disabled={product.quantity === 0 || produtoVendendo === product.id}
+                                                onChange={(event) => {
+                                                    setQuantidadesVenda((previous) => ({
+                                                        ...previous,
+                                                        [product.id]: event.target.value,
+                                                    }));
+                                                    setMensagemVenda((previous) =>
+                                                        previous?.produtoId === product.id ? null : previous
+                                                    );
+                                                }}
+                                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                                            />
+                                        </div>
                                     </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSale(product)}
+                                        disabled={product.quantity === 0 || produtoVendendo !== null}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#101d43] px-3 py-2.5 text-sm font-medium text-white transition hover:bg-[#1c326b] disabled:cursor-not-allowed disabled:bg-slate-300"
+                                    >
+                                        <ShoppingCart size={16} />
+
+                                        {product.quantity === 0
+                                            ? "Esgotado"
+                                            : produtoVendendo === product.id
+                                                ? "Registrando venda..."
+                                                : "Registrar venda"}
+                                    </button>
+
+                                    {mensagemVenda?.produtoId === product.id && (
+                                        <p
+                                            role={mensagemVenda.tipo === "erro" ? "alert" : "status"}
+                                            className={`text-xs ${mensagemVenda.tipo === "erro" ? "text-red-600" : "text-emerald-600"}`}
+                                        >
+                                            {mensagemVenda.texto}
+                                        </p>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-2">
                                         <Link
