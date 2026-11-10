@@ -7,7 +7,7 @@ beforeAll(async () => {
   adm = await logarComoAdm();
 });
 
-// Cada teste cria o seu produto, com SKU próprio
+// sku proprios p cada teste
 async function criarProduto(campos = {}) {
   contador += 1;
   const resposta = await adm
@@ -149,5 +149,20 @@ describe('venda', () => {
 
     const resposta = await adm.get(`/products/${produto.id}`);
     expect(resposta.body.quantidade).toBe(10);
+  });
+
+  test('recusa venda se o produto já estiver com estoque zerado', async () => {
+    // criação de produto já com o estoque vazio
+    const produto = await criarProduto({ quantidade: 0 });
+    const funcionario = await logarComoFuncionario(); // ou adm, dependendo da sua preferência
+
+    const resposta = await funcionario
+      .patch(`/products/${produto.id}/sale`)
+      .send({ quantidadeVendida: 1 })
+      .expect(400);
+
+    // Garante que o estoque continuou em 0
+    const confirmacao = await adm.get(`/products/${produto.id}`);
+    expect(confirmacao.body.quantidade).toBe(0);
   });
 });

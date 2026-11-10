@@ -13,6 +13,16 @@ describe('login', () => {
     expect(resposta.headers['set-cookie'][0]).toMatch(/HttpOnly/);
   });
 
+  //ct06: email com maiúsculas e espaços
+  test('CT06: aceita login com e-mail contendo maiúsculas e espaços', async () => {
+      const resposta = await request(app)
+        .post('/login')
+        .send({ username: ' ADM@Teste.com ', password: 'senha-adm' });
+
+      expect(resposta.status).toBe(200);
+      expect(resposta.body.usuario.perfil).toBe('ADM');
+    });
+
   test.each([
     ['senha errada', { username: 'adm@teste.com', password: 'errada' }],
     ['e-mail inexistente', { username: 'nao@existe.com', password: 'senha-adm' }],
