@@ -28,17 +28,33 @@ axiosInstance.interceptors.response.use(
       const status = error.response?.status;
 
       if (typeof window !== "undefined" && status) {
-        // Avisa a aplicação que aconteceu um erro HTTP
+
+        // Erro de permissão: não abre a tela global de erros
+        if (status === 403) {
+          window.dispatchEvent(
+            new CustomEvent("api:forbidden", {
+              detail: {
+                mensagem:
+                  error.response?.data?.erro ||
+                  "Você não tem permissão para realizar esta ação.",
+              },
+            })
+          );
+
+          return Promise.reject(error);
+        }
+
+        // Demais erros HTTP
         window.dispatchEvent(
           new CustomEvent("api:http-error", {
             detail: { status },
-          }),
+          })
         );
       }
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export async function testarErro() {

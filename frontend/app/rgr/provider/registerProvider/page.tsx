@@ -1,21 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Building2,
-  Loader2,
-  Save,
-  X,
-  Phone,
-  MapPin,
-} from "lucide-react";
-import { formProductService as providerService } from "@/services/provider/provider.service";
-import { maskCep, maskCpfCnpj, maskPhone } from "@/utils/masks";
-import { cepService } from "@/services/cepService";
-import { cnpjService, type CnpjData } from "@/services/cnpjService";
+import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Building2, Loader2, Save, X, Phone, MapPin } from 'lucide-react';
+import { formProductService as providerService } from '@/services/provider/provider.service';
+import { maskCep, maskCpfCnpj, maskPhone } from '@/utils/masks';
+import { cepService } from '@/services/cepService';
+import { cnpjService, type CnpjData } from '@/services/cnpjService';
 
 interface Fornecedor {
   id: string;
@@ -31,23 +23,23 @@ interface Fornecedor {
   observacoes: string;
 }
 
-type FormularioFornecedor = Omit<Fornecedor, "id">;
+type FormularioFornecedor = Omit<Fornecedor, 'id'>;
 
 const FORMULARIO_VAZIO: FormularioFornecedor = {
-  nome: "",
-  nomeFantasia: "",
-  documento: "",
-  telefone: "",
-  email: "",
-  cep: "",
-  endereco: "",
-  cidade: "",
-  estado: "",
-  observacoes: "",
+  nome: '',
+  nomeFantasia: '',
+  documento: '',
+  telefone: '',
+  email: '',
+  cep: '',
+  endereco: '',
+  cidade: '',
+  estado: '',
+  observacoes: '',
 };
 
 function somenteNumeros(valor: string) {
-  return valor.replace(/\D/g, "");
+  return valor.replace(/\D/g, '');
 }
 
 // Todos os campos são obrigatórios, exceto "observacoes"
@@ -55,15 +47,15 @@ const CAMPOS_OBRIGATORIOS: {
   campo: keyof FormularioFornecedor;
   rotulo: string;
 }[] = [
-  { campo: "documento", rotulo: "CNPJ ou CPF" },
-  { campo: "nome", rotulo: "nome ou razão social" },
-  { campo: "nomeFantasia", rotulo: "nome fantasia" },
-  { campo: "telefone", rotulo: "telefone" },
-  { campo: "email", rotulo: "e-mail" },
-  { campo: "cep", rotulo: "CEP" },
-  { campo: "endereco", rotulo: "endereço" },
-  { campo: "cidade", rotulo: "cidade" },
-  { campo: "estado", rotulo: "UF" },
+  { campo: 'documento', rotulo: 'CNPJ ou CPF' },
+  { campo: 'nome', rotulo: 'nome ou razão social' },
+  { campo: 'nomeFantasia', rotulo: 'nome fantasia' },
+  { campo: 'telefone', rotulo: 'telefone' },
+  { campo: 'email', rotulo: 'e-mail' },
+  { campo: 'cep', rotulo: 'CEP' },
+  { campo: 'endereco', rotulo: 'endereço' },
+  { campo: 'cidade', rotulo: 'cidade' },
+  { campo: 'estado', rotulo: 'UF' },
 ];
 
 // A BrasilAPI devolve endereço e cidade em maiúsculas: "AVENIDA PAULISTA" -> "Avenida Paulista"
@@ -76,9 +68,9 @@ function capitalizar(texto: string) {
 function montarEndereco(empresa: CnpjData) {
   const rua = [empresa.descricao_tipo_de_logradouro, empresa.logradouro]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
-  if (!rua) return "";
+  if (!rua) return '';
 
   return empresa.numero
     ? `${capitalizar(rua)}, ${empresa.numero}`
@@ -93,12 +85,12 @@ export default function CadastrarFornecedorPage() {
     useState<FormularioFornecedor>(FORMULARIO_VAZIO);
   const [carregando, setCarregando] = useState(true);
   const [naoEncontrado, setNaoEncontrado] = useState(false);
-  const [erro, setErro] = useState("");
+  const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
 
   useEffect(() => {
-    const idUrl = new URLSearchParams(window.location.search).get("id");
+    const idUrl = new URLSearchParams(window.location.search).get('id');
 
     if (!idUrl) {
       setCarregando(false);
@@ -124,11 +116,12 @@ export default function CadastrarFornecedorPage() {
     let valorFormatado = valor;
 
     switch (campo) {
-      case "documento": {
+      case 'documento': {
         valorFormatado = maskCpfCnpj(valor);
 
         const digitos = somenteNumeros(valorFormatado);
-        const documentoMudou = digitos !== somenteNumeros(formulario.documento);
+        const documentoMudou =
+          digitos !== somenteNumeros(formulario.documento);
 
         // CNPJ completo (14 dígitos): busca os dados da empresa e preenche o formulário
         if (digitos.length === 14 && documentoMudou) {
@@ -137,17 +130,17 @@ export default function CadastrarFornecedorPage() {
         break;
       }
 
-      case "telefone":
+      case 'telefone':
         valorFormatado = maskPhone(valor);
         break;
 
-      case "cep":
+      case 'cep':
         valorFormatado = maskCep(valor);
         break;
     }
 
     setFormulario((atual) => ({ ...atual, [campo]: valorFormatado }));
-    setErro("");
+    setErro('');
   }
 
   async function buscarCnpj(cnpj: string) {
@@ -165,25 +158,25 @@ export default function CadastrarFornecedorPage() {
         // As observações não vêm da API e são mantidas.
         return {
           ...atual,
-          nome: empresa.razao_social || "",
-          nomeFantasia: empresa.nome_fantasia || "",
+          nome: empresa.razao_social || '',
+          nomeFantasia: empresa.nome_fantasia || '',
           telefone: empresa.ddd_telefone_1
             ? maskPhone(empresa.ddd_telefone_1)
-            : "",
-          email: empresa.email ? empresa.email.toLowerCase() : "",
-          cep: empresa.cep ? maskCep(String(empresa.cep)) : "",
+            : '',
+          email: empresa.email ? empresa.email.toLowerCase() : '',
+          cep: empresa.cep ? maskCep(String(empresa.cep)) : '',
           endereco: montarEndereco(empresa),
-          cidade: empresa.municipio ? capitalizar(empresa.municipio) : "",
-          estado: empresa.uf || "",
+          cidade: empresa.municipio ? capitalizar(empresa.municipio) : '',
+          estado: empresa.uf || '',
         };
       });
 
-      setErro("");
+      setErro('');
     } catch (error) {
       setErro(
         error instanceof Error
           ? error.message
-          : "Não foi possível consultar o CNPJ.",
+          : 'Não foi possível consultar o CNPJ.',
       );
     } finally {
       setBuscandoCnpj(false);
@@ -192,7 +185,7 @@ export default function CadastrarFornecedorPage() {
 
   async function salvarFornecedor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErro("");
+    setErro('');
 
     const faltando = CAMPOS_OBRIGATORIOS.filter(
       ({ campo }) => !formulario[campo].trim(),
@@ -202,29 +195,29 @@ export default function CadastrarFornecedorPage() {
       setErro(
         `Preencha os campos obrigatórios: ${faltando
           .map(({ rotulo }) => rotulo)
-          .join(", ")}.`,
+          .join(', ')}.`,
       );
       return;
     }
 
     const tamanhoDocumento = somenteNumeros(formulario.documento).length;
     if (tamanhoDocumento !== 11 && tamanhoDocumento !== 14) {
-      setErro("Informe um CPF (11 dígitos) ou um CNPJ (14 dígitos) completo.");
+      setErro('Informe um CPF (11 dígitos) ou um CNPJ (14 dígitos) completo.');
       return;
     }
 
     if (somenteNumeros(formulario.telefone).length < 10) {
-      setErro("Informe um telefone completo, com DDD.");
+      setErro('Informe um telefone completo, com DDD.');
       return;
     }
 
     if (somenteNumeros(formulario.cep).length !== 8) {
-      setErro("Informe um CEP com 8 dígitos.");
+      setErro('Informe um CEP com 8 dígitos.');
       return;
     }
 
     if (formulario.estado.trim().length !== 2) {
-      setErro("Informe a sigla do estado com 2 letras.");
+      setErro('Informe a sigla do estado com 2 letras.');
       return;
     }
 
@@ -251,12 +244,12 @@ export default function CadastrarFornecedorPage() {
         await providerService.preecherProvider(dados);
       }
 
-      router.push("/rgr/provider");
+      router.push('/rgr/provider');
     } catch (erro) {
       setErro(
         erro instanceof Error
           ? erro.message
-          : "Não foi possível salvar o fornecedor. Tente novamente.",
+          : 'Não foi possível salvar o fornecedor. Tente novamente.',
       );
       setSalvando(false);
     }
@@ -278,20 +271,20 @@ export default function CadastrarFornecedorPage() {
         estado: dados.uf || atual.estado,
       }));
 
-      setErro("");
+      setErro('');
     } catch (error) {
       setErro(
         error instanceof Error
           ? error.message
-          : "Não foi possível consultar o CEP.",
+          : 'Não foi possível consultar o CEP.',
       );
     }
   }
 
   const classeInput =
-    "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
+    'mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
 
-  const classeLabel = "block text-sm font-medium text-slate-700";
+  const classeLabel = 'block text-sm font-medium text-slate-700';
 
   if (carregando) {
     return (
@@ -349,17 +342,17 @@ export default function CadastrarFornecedorPage() {
               Fornecedores
             </Link>
             <span>/</span>
-            <span>{id ? "Editar" : "Cadastro"}</span>
+            <span>{id ? 'Editar' : 'Cadastro'}</span>
           </div>
 
           <h1 className="text-2xl font-bold text-[#172b4d] sm:text-3xl">
-            {id ? "Editar fornecedor" : "Cadastrar fornecedor"}
+            {id ? 'Editar fornecedor' : 'Cadastrar fornecedor'}
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
             {id
-              ? "Atualize as informações do fornecedor cadastrado."
-              : "Preencha os dados para adicionar um novo fornecedor."}
+              ? 'Atualize as informações do fornecedor cadastrado.'
+              : 'Preencha os dados para adicionar um novo fornecedor.'}
           </p>
         </div>
 
@@ -395,13 +388,13 @@ export default function CadastrarFornecedorPage() {
                       type="text"
                       value={formulario.documento}
                       onChange={(e) =>
-                        atualizarCampo("documento", e.target.value)
+                        atualizarCampo('documento', e.target.value)
                       }
                       placeholder="Ex.: 00.000.000/0000-00"
                       maxLength={20}
                       required
                       autoFocus
-                      className={`${classeInput} ${buscandoCnpj ? "pr-11" : ""}`}
+                      className={`${classeInput} ${buscandoCnpj ? 'pr-11' : ''}`}
                     />
 
                     {buscandoCnpj && (
@@ -414,10 +407,13 @@ export default function CadastrarFornecedorPage() {
                   </span>
                 </label>
 
-                <p aria-live="polite" className="mt-1.5 text-xs text-slate-400">
+                <p
+                  aria-live="polite"
+                  className="mt-1.5 text-xs text-slate-400"
+                >
                   {buscandoCnpj
-                    ? "Buscando dados do CNPJ..."
-                    : "Ao informar um CNPJ completo, os dados da empresa são preenchidos automaticamente."}
+                    ? 'Buscando dados do CNPJ...'
+                    : 'Ao informar um CNPJ completo, os dados da empresa são preenchidos automaticamente.'}
                 </p>
               </div>
 
@@ -426,7 +422,7 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="text"
                   value={formulario.nome}
-                  onChange={(e) => atualizarCampo("nome", e.target.value)}
+                  onChange={(e) => atualizarCampo('nome', e.target.value)}
                   placeholder="Ex.: Moda Atacado Ltda."
                   required
                   maxLength={120}
@@ -440,7 +436,7 @@ export default function CadastrarFornecedorPage() {
                   type="text"
                   value={formulario.nomeFantasia}
                   onChange={(e) =>
-                    atualizarCampo("nomeFantasia", e.target.value)
+                    atualizarCampo('nomeFantasia', e.target.value)
                   }
                   placeholder="Ex.: Moda Atacado"
                   required
@@ -474,7 +470,9 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="tel"
                   value={formulario.telefone}
-                  onChange={(e) => atualizarCampo("telefone", e.target.value)}
+                  onChange={(e) =>
+                    atualizarCampo('telefone', e.target.value)
+                  }
                   placeholder="(67) 99999-9999"
                   required
                   maxLength={25}
@@ -487,7 +485,7 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="email"
                   value={formulario.email}
-                  onChange={(e) => atualizarCampo("email", e.target.value)}
+                  onChange={(e) => atualizarCampo('email', e.target.value)}
                   placeholder="contato@fornecedor.com.br"
                   required
                   maxLength={150}
@@ -518,10 +516,10 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="text"
                   value={formulario.cep}
-                  onChange={(e) => atualizarCampo("cep", e.target.value)}
+                  onChange={(e) => atualizarCampo('cep', e.target.value)}
                   onBlur={buscarCep}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === 'Enter') {
                       e.preventDefault();
                       buscarCep();
                     }
@@ -538,7 +536,9 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="text"
                   value={formulario.endereco}
-                  onChange={(e) => atualizarCampo("endereco", e.target.value)}
+                  onChange={(e) =>
+                    atualizarCampo('endereco', e.target.value)
+                  }
                   placeholder="Rua, avenida e número"
                   required
                   maxLength={180}
@@ -551,7 +551,7 @@ export default function CadastrarFornecedorPage() {
                 <input
                   type="text"
                   value={formulario.cidade}
-                  onChange={(e) => atualizarCampo("cidade", e.target.value)}
+                  onChange={(e) => atualizarCampo('cidade', e.target.value)}
                   placeholder="Nome da cidade"
                   required
                   maxLength={100}
@@ -566,7 +566,7 @@ export default function CadastrarFornecedorPage() {
                   value={formulario.estado}
                   onChange={(e) =>
                     atualizarCampo(
-                      "estado",
+                      'estado',
                       e.target.value.toUpperCase().slice(0, 2),
                     )
                   }
@@ -585,7 +585,9 @@ export default function CadastrarFornecedorPage() {
               Observações comerciais
               <textarea
                 value={formulario.observacoes}
-                onChange={(e) => atualizarCampo("observacoes", e.target.value)}
+                onChange={(e) =>
+                  atualizarCampo('observacoes', e.target.value)
+                }
                 placeholder="Ex.: prazo de entrega, pedido mínimo ou condições de pagamento."
                 rows={4}
                 maxLength={1000}
@@ -593,7 +595,9 @@ export default function CadastrarFornecedorPage() {
               />
             </label>
 
-            <p className="mt-1.5 text-xs text-slate-400">Campo opcional.</p>
+            <p className="mt-1.5 text-xs text-slate-400">
+              Campo opcional.
+            </p>
 
             {erro && (
               <div
@@ -621,10 +625,10 @@ export default function CadastrarFornecedorPage() {
               >
                 <Save size={17} />
                 {salvando
-                  ? "Salvando..."
+                  ? 'Salvando...'
                   : id
-                    ? "Salvar alterações"
-                    : "Cadastrar fornecedor"}
+                    ? 'Salvar alterações'
+                    : 'Cadastrar fornecedor'}
               </button>
             </div>
           </div>
