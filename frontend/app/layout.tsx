@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: "descrição",
   icons: {
     icon: "/imagens/bolsa-de-compras.png",
-  }
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

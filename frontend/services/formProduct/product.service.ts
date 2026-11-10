@@ -1,4 +1,3 @@
-
 import { axiosInstance, mensagemDaApi } from "../api";
 
 export interface ProdutoProps {
@@ -22,7 +21,9 @@ export class FormProductService {
     } catch (erro: unknown) {
       console.error("Erro ao cadastrar produto:", erro);
 
-      throw new Error(mensagemDaApi(erro, "Não foi possível cadastrar o produto."));
+      throw new Error(
+        mensagemDaApi(erro, "Não foi possível cadastrar o produto."),
+      );
     }
   }
 
@@ -34,7 +35,9 @@ export class FormProductService {
     } catch (erro: unknown) {
       console.error("Erro ao buscar produto:", erro);
 
-      throw new Error(mensagemDaApi(erro, "Não foi possível buscar o produto."));
+      throw new Error(
+        mensagemDaApi(erro, "Não foi possível buscar o produto."),
+      );
     }
   }
 
@@ -46,7 +49,9 @@ export class FormProductService {
     } catch (erro: unknown) {
       console.error("Erro ao editar produto:", erro);
 
-      throw new Error(mensagemDaApi(erro, "Não foi possível editar o produto."));
+      throw new Error(
+        mensagemDaApi(erro, "Não foi possível editar o produto."),
+      );
     }
   }
 }

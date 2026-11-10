@@ -17,7 +17,7 @@ export default function SistemaLayout({
   };
 
   return (
-     <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden">
       <div
         className={`h-full shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${
           sidebarOpen ? "w-[250px]" : "w-0"
@@ -25,12 +25,9 @@ export default function SistemaLayout({
       >
         <Sidebar onClose={toggleSidebar} />
       </div>
-      
+
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden overflow-y-auto">
-        <Navbar
-          sidebarOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-        />
+        <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <main id="main-content" className="p-6">
             <GlobalErrorHandler />

@@ -1,12 +1,28 @@
+"use client";
 
-'use client';
-
-import { Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Package, Tags, DollarSign, Ruler, FileText, Image as ImageIcon, Barcode, Save, RotateCcw, Truck, } from 'lucide-react';
-import { formProductService } from '@/services/formProduct/product.service';
-import { formProductService as providerService } from '@/services/provider/provider.service';
-import { maskSku, maskCurrency } from "@/utils/masks"
+import {
+  Suspense,
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Package,
+  Tags,
+  DollarSign,
+  Ruler,
+  FileText,
+  Image as ImageIcon,
+  Barcode,
+  Save,
+  RotateCcw,
+  Truck,
+} from "lucide-react";
+import { formProductService } from "@/services/formProduct/product.service";
+import { formProductService as providerService } from "@/services/provider/provider.service";
+import { maskSku, maskCurrency } from "@/utils/masks";
 
 interface FornecedorOpcao {
   id: string;
@@ -15,26 +31,26 @@ interface FornecedorOpcao {
 }
 
 const FORMULARIO_INICIAL = {
-  nome: '',
-  categoria: 'Camisa',
-  sku: '',
-  valor: '',
-  quantidade: '1',
-  fornecedorId: '',
-  tamanho: 'M',
-  imagem: '',
-  descricao: '',
+  nome: "",
+  categoria: "Camisa",
+  sku: "",
+  valor: "",
+  quantidade: "1",
+  fornecedorId: "",
+  tamanho: "M",
+  imagem: "",
+  descricao: "",
 };
 
 function FormProduto() {
   const router = useRouter();
   // Com ?id=1 na URL o formulário edita o produto; sem id, cadastra um novo.
-  const id = useSearchParams().get('id');
+  const id = useSearchParams().get("id");
   const [produtoCarregado, setProdutoCarregado] = useState(!id);
   const [form, setForm] = useState(FORMULARIO_INICIAL);
-  const [mensagem, setMensagem] = useState('');
-  const [tipoMensagem, setTipoMensagem] = useState<'sucesso' | 'erro'>(
-    'sucesso',
+  const [mensagem, setMensagem] = useState("");
+  const [tipoMensagem, setTipoMensagem] = useState<"sucesso" | "erro">(
+    "sucesso",
   );
   const [fornecedores, setFornecedores] = useState<FornecedorOpcao[]>([]);
 
@@ -43,13 +59,13 @@ function FormProduto() {
       .listingAllProvider()
       .then(setFornecedores)
       .catch(() => {
-        setTipoMensagem('erro');
-        setMensagem('Não foi possível carregar os fornecedores.');
+        setTipoMensagem("erro");
+        setMensagem("Não foi possível carregar os fornecedores.");
       });
   }, []);
 
   useEffect(() => {
-    setMensagem('');
+    setMensagem("");
 
     if (!id) {
       setForm(FORMULARIO_INICIAL);
@@ -65,10 +81,10 @@ function FormProduto() {
         setForm({
           nome: produto.nome,
           categoria: produto.categoria,
-          sku: maskSku(produto.sku ?? ''),
+          sku: maskSku(produto.sku ?? ""),
           valor: maskCurrency(String(Math.round(Number(produto.valor) * 100))),
           quantidade: String(produto.quantidade),
-          fornecedorId: produto.fornecedorId ?? '',
+          fornecedorId: produto.fornecedorId ?? "",
           tamanho: produto.tamanho,
           imagem: produto.imagem,
           descricao: produto.descricao,
@@ -76,18 +92,18 @@ function FormProduto() {
         setProdutoCarregado(true);
       })
       .catch((erro: Error) => {
-        setTipoMensagem('erro');
+        setTipoMensagem("erro");
         setMensagem(erro.message);
       });
   }, [id]);
 
-  const classeLabel = 'block text-sm font-medium text-slate-700';
+  const classeLabel = "block text-sm font-medium text-slate-700";
 
   const classeInput =
-    'mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
+    "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10";
 
   function handleChange(
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) {
     const { name, value } = e.target;
 
@@ -118,24 +134,24 @@ function FormProduto() {
     const quantidade = Number(form.quantidade);
 
     if (!form.nome.trim() || !form.categoria) {
-      setTipoMensagem('erro');
-      setMensagem('Preencha o nome e a categoria do produto.');
+      setTipoMensagem("erro");
+      setMensagem("Preencha o nome e a categoria do produto.");
       return;
     }
 
     if (!form.valor.trim() || !Number.isFinite(valor) || valor <= 0) {
-      setTipoMensagem('erro');
-      setMensagem('Informe um valor de venda válido.');
+      setTipoMensagem("erro");
+      setMensagem("Informe um valor de venda válido.");
       return;
     }
 
     if (
-      form.quantidade.trim() === '' ||
+      form.quantidade.trim() === "" ||
       !Number.isInteger(quantidade) ||
       quantidade < 0
     ) {
-      setTipoMensagem('erro');
-      setMensagem('Informe uma quantidade inteira válida.');
+      setTipoMensagem("erro");
+      setMensagem("Informe uma quantidade inteira válida.");
       return;
     }
 
@@ -147,11 +163,10 @@ function FormProduto() {
       quantidade,
     };
 
-
     try {
       if (id) {
         await formProductService.atualizarProduto(id, produto);
-        router.push('/rgr/dashboard');
+        router.push("/rgr/dashboard");
         return;
       }
 
@@ -165,31 +180,28 @@ function FormProduto() {
       setTipoMensagem("erro");
 
       setMensagem(
-        erro instanceof Error
-          ? erro.message
-          : "Erro ao salvar o produto."
+        erro instanceof Error ? erro.message : "Erro ao salvar o produto.",
       );
     }
-
   }
 
   function converterValor(valor: string): number {
     const valorFormatado = valor
-      .replace(/[^\d,.-]/g, '')
-      .replace(/\./g, '')
-      .replace(',', '.');
+      .replace(/[^\d,.-]/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
 
     return Number(valorFormatado);
   }
 
   function limparCampos() {
     if (id) {
-      router.push('/rgr/dashboard');
+      router.push("/rgr/dashboard");
       return;
     }
 
     setForm({ ...FORMULARIO_INICIAL });
-    setMensagem('');
+    setMensagem("");
   }
 
   return (
@@ -202,17 +214,17 @@ function FormProduto() {
             <span>/</span>
             <span>Produtos</span>
             <span>/</span>
-            <span>{id ? 'Edição' : 'Cadastro'}</span>
+            <span>{id ? "Edição" : "Cadastro"}</span>
           </div>
 
           <h1 className="text-2xl font-bold text-[#172b4d] sm:text-3xl">
-            {id ? 'Editar produto' : 'Cadastrar produto'}
+            {id ? "Editar produto" : "Cadastrar produto"}
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
             {id
-              ? 'Altere os dados do produto e salve as mudanças.'
-              : 'Preencha os dados para adicionar um novo produto ao estoque.'}
+              ? "Altere os dados do produto e salve as mudanças."
+              : "Preencha os dados para adicionar um novo produto ao estoque."}
           </p>
         </header>
 
@@ -297,7 +309,6 @@ function FormProduto() {
                     placeholder="Ex.: CAM-001"
                     maxLength={50}
                     className={`${classeInput} pl-10`}
-
                   />
                 </div>
 
@@ -329,8 +340,7 @@ function FormProduto() {
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="valor" className={classeLabel}>
-                  Valor de venda (R$){' '}
-                  <span className="text-red-500">*</span>
+                  Valor de venda (R$) <span className="text-red-500">*</span>
                 </label>
 
                 <div className="relative">
@@ -350,8 +360,7 @@ function FormProduto() {
 
               <div>
                 <label htmlFor="quantidade" className={classeLabel}>
-                  Quantidade em estoque{' '}
-                  <span className="text-red-500">*</span>
+                  Quantidade em estoque <span className="text-red-500">*</span>
                 </label>
 
                 <input
@@ -415,7 +424,8 @@ function FormProduto() {
                 </select>
 
                 <p className="mt-1.5 text-xs text-slate-400">
-                  Não encontrou o fornecedor? Cadastre-o na área de fornecedores.
+                  Não encontrou o fornecedor? Cadastre-o na área de
+                  fornecedores.
                 </p>
               </div>
             </div>
@@ -509,9 +519,7 @@ function FormProduto() {
                   className={`${classeInput} resize-y`}
                 />
 
-                <p className="mt-1.5 text-xs text-slate-400">
-                  Campo opcional.
-                </p>
+                <p className="mt-1.5 text-xs text-slate-400">Campo opcional.</p>
               </div>
             </div>
           </section>
@@ -522,10 +530,11 @@ function FormProduto() {
               <div
                 role="status"
                 aria-live="polite"
-                className={`mb-5 rounded-lg border px-4 py-3 text-sm ${tipoMensagem === 'erro'
-                  ? 'border-red-200 bg-red-50 text-red-700'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  }`}
+                className={`mb-5 rounded-lg border px-4 py-3 text-sm ${
+                  tipoMensagem === "erro"
+                    ? "border-red-200 bg-red-50 text-red-700"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                }`}
               >
                 {mensagem}
               </div>
@@ -538,7 +547,7 @@ function FormProduto() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
               >
                 <RotateCcw size={17} />
-                {id ? 'Cancelar' : 'Limpar campos'}
+                {id ? "Cancelar" : "Limpar campos"}
               </button>
 
               <button
@@ -547,7 +556,7 @@ function FormProduto() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save size={17} />
-                {id ? 'Salvar alterações' : 'Cadastrar produto'}
+                {id ? "Salvar alterações" : "Cadastrar produto"}
               </button>
             </div>
           </div>

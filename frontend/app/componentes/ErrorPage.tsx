@@ -1,7 +1,6 @@
-
-import Link from 'next/link';
-import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft } from 'lucide-react';
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface ErrorPageProps {
   code: string;
@@ -10,13 +9,13 @@ interface ErrorPageProps {
   description: string;
   status: string;
   icon: LucideIcon;
-  tone?: 'amber' | 'blue' | 'red';
+  tone?: "amber" | "blue" | "red";
 }
 
 const tones = {
-  amber: 'bg-amber-50 text-amber-500',
-  blue: 'bg-blue-50 text-blue-600',
-  red: 'bg-red-50 text-red-600',
+  amber: "bg-amber-50 text-amber-500",
+  blue: "bg-blue-50 text-blue-600",
+  red: "bg-red-50 text-red-600",
 };
 
 export default function ErrorPage({
@@ -26,7 +25,7 @@ export default function ErrorPage({
   description,
   status,
   icon: Icon,
-  tone = 'amber',
+  tone = "amber",
 }: ErrorPageProps) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -57,13 +56,9 @@ export default function ErrorPage({
 
         {/* Informações do erro */}
         <div className="mt-7 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-xs font-medium text-slate-500">
-            Código HTTP
-          </p>
+          <p className="text-xs font-medium text-slate-500">Código HTTP</p>
 
-          <p className="mt-1 text-sm font-semibold text-slate-700">
-            {status}
-          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">{status}</p>
         </div>
 
         {/* Botão de retorno */}
@@ -74,7 +69,6 @@ export default function ErrorPage({
           <ArrowLeft size={17} />
           Voltar ao início
         </Link>
-
       </div>
     </main>
   );

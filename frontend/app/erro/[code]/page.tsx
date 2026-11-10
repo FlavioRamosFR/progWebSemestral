@@ -1,7 +1,14 @@
-
-import { AlertCircle,LockKeyhole,CreditCard,ShieldAlert,SearchX,ServerCrash, type LucideIcon } from 'lucide-react';
-import { notFound } from 'next/navigation';
-import ErrorPage from '@/app/componentes/ErrorPage'; 
+import {
+  AlertCircle,
+  LockKeyhole,
+  CreditCard,
+  ShieldAlert,
+  SearchX,
+  ServerCrash,
+  type LucideIcon,
+} from "lucide-react";
+import { notFound } from "next/navigation";
+import ErrorPage from "@/app/componentes/ErrorPage";
 
 interface ErroConfig {
   eyebrow: string;
@@ -9,69 +16,69 @@ interface ErroConfig {
   description: string;
   status: string;
   icon: LucideIcon;
-  tone: 'amber' | 'blue' | 'red';
+  tone: "amber" | "blue" | "red";
 }
 
 // Configurações das páginas de erro
 const erros: Record<string, ErroConfig> = {
-  '400': {
-    eyebrow: 'Erro de requisição',
-    title: 'Solicitação inválida',
+  "400": {
+    eyebrow: "Erro de requisição",
+    title: "Solicitação inválida",
     description:
-      'Não foi possível processar sua solicitação. Os dados enviados podem estar incorretos ou incompletos. Verifique as informações e tente novamente.',
-    status: '400 — Bad Request',
+      "Não foi possível processar sua solicitação. Os dados enviados podem estar incorretos ou incompletos. Verifique as informações e tente novamente.",
+    status: "400 — Bad Request",
     icon: AlertCircle,
-    tone: 'amber',
+    tone: "amber",
   },
 
-  '401': {
-    eyebrow: 'Autenticação necessária',
-    title: 'Acesso não autenticado',
+  "401": {
+    eyebrow: "Autenticação necessária",
+    title: "Acesso não autenticado",
     description:
-      'Você precisa estar autenticado para acessar este recurso. Sua sessão pode ter expirado. Faça login novamente para continuar.',
-    status: '401 — Unauthorized',
+      "Você precisa estar autenticado para acessar este recurso. Sua sessão pode ter expirado. Faça login novamente para continuar.",
+    status: "401 — Unauthorized",
     icon: LockKeyhole,
-    tone: 'blue',
+    tone: "blue",
   },
 
-  '402': {
-    eyebrow: 'Pagamento necessário',
-    title: 'Pagamento necessário',
+  "402": {
+    eyebrow: "Pagamento necessário",
+    title: "Pagamento necessário",
     description:
-      'O acesso a este recurso exige uma condição de pagamento. Verifique as informações da sua conta ou entre em contato com o administrador.',
-    status: '402 — Payment Required',
+      "O acesso a este recurso exige uma condição de pagamento. Verifique as informações da sua conta ou entre em contato com o administrador.",
+    status: "402 — Payment Required",
     icon: CreditCard,
-    tone: 'amber',
+    tone: "amber",
   },
 
-  '403': {
-    eyebrow: 'Acesso proibido',
-    title: 'Você não tem permissão',
+  "403": {
+    eyebrow: "Acesso proibido",
+    title: "Você não tem permissão",
     description:
-      'Sua solicitação foi compreendida, mas você não possui autorização para acessar este recurso.',
-    status: '403 — Forbidden',
+      "Sua solicitação foi compreendida, mas você não possui autorização para acessar este recurso.",
+    status: "403 — Forbidden",
     icon: ShieldAlert,
-    tone: 'red',
+    tone: "red",
   },
 
-  '404': {
-    eyebrow: 'Página não encontrada',
-    title: 'Ops! Não encontramos essa página.',
+  "404": {
+    eyebrow: "Página não encontrada",
+    title: "Ops! Não encontramos essa página.",
     description:
-      'A página que você está tentando acessar não existe, foi removida ou está temporariamente indisponível.',
-    status: '404 — Not Found',
+      "A página que você está tentando acessar não existe, foi removida ou está temporariamente indisponível.",
+    status: "404 — Not Found",
     icon: SearchX,
-    tone: 'amber',
+    tone: "amber",
   },
 
-  '500': {
-    eyebrow: 'Erro interno do servidor',
-    title: 'Algo deu errado!',
+  "500": {
+    eyebrow: "Erro interno do servidor",
+    title: "Algo deu errado!",
     description:
-      'Ocorreu um problema inesperado ao processar sua solicitação. Nossa equipe precisa verificar o ocorrido. Tente novamente mais tarde.',
-    status: '500 — Internal Server Error',
+      "Ocorreu um problema inesperado ao processar sua solicitação. Nossa equipe precisa verificar o ocorrido. Tente novamente mais tarde.",
+    status: "500 — Internal Server Error",
     icon: ServerCrash,
-    tone: 'red',
+    tone: "red",
   },
 };
 
@@ -93,10 +100,5 @@ export default async function ErrorCodePage({ params }: PageProps) {
     notFound();
   }
 
-  return (
-    <ErrorPage
-      code={code}
-      {...erro}
-    />
-  );
+  return <ErrorPage code={code} {...erro} />;
 }

@@ -1,11 +1,28 @@
-'use client';
+"use client";
 
-import { useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle,BarChart3,CalendarDays,ChartNoAxesCombined,DollarSign,FileText,Package,Printer,Search,ShoppingBag,TrendingUp,} from 'lucide-react';
-import { reportService, type BestSellingProduct, type SalesAnalysis, type SalesSummary } from '@/services/export/reports.service';
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  AlertCircle,
+  BarChart3,
+  CalendarDays,
+  ChartNoAxesCombined,
+  DollarSign,
+  FileText,
+  Package,
+  Printer,
+  Search,
+  ShoppingBag,
+  TrendingUp,
+} from "lucide-react";
+import {
+  reportService,
+  type BestSellingProduct,
+  type SalesAnalysis,
+  type SalesSummary,
+} from "@/services/export/reports.service";
 
 interface RelatorioVendas {
-  periodo: { inicio: string; fim: string;};
+  periodo: { inicio: string; fim: string };
   resumo: SalesSummary;
   analise: SalesAnalysis;
   itensMaisVendidos: BestSellingProduct[];
@@ -13,16 +30,16 @@ interface RelatorioVendas {
 
 function formatarDataInput(data: Date): string {
   const ano = data.getFullYear();
-  const mes = String(data.getMonth() + 1).padStart(2, '0');
-  const dia = String(data.getDate()).padStart(2, '0');
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
 
   return `${ano}-${mes}-${dia}`;
 }
 
 function formatarData(data: string): string {
-  if (!data) return '—';
+  if (!data) return "—";
 
-  const [ano, mes, dia] = data.split('-');
+  const [ano, mes, dia] = data.split("-");
 
   if (!ano || !mes || !dia) return data;
 
@@ -30,21 +47,21 @@ function formatarData(data: string): string {
 }
 
 function formatarMoeda(valor: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   }).format(valor);
 }
 
 function formatarNumero(valor: number): string {
-  return new Intl.NumberFormat('pt-BR').format(valor);
+  return new Intl.NumberFormat("pt-BR").format(valor);
 }
 
 export default function RelatorioVendasPage() {
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
   const [relatorio, setRelatorio] = useState<RelatorioVendas | null>(null);
-  const [erro, setErro] = useState('');
+  const [erro, setErro] = useState("");
   const [gerando, setGerando] = useState(false);
 
   // Define o primeiro dia do mês e a data atual como período inicial.
@@ -71,16 +88,16 @@ export default function RelatorioVendasPage() {
   async function gerarRelatorio(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setErro('');
+    setErro("");
     setRelatorio(null);
 
     if (!dataInicio || !dataFim) {
-      setErro('Informe a data inicial e a data final.');
+      setErro("Informe a data inicial e a data final.");
       return;
     }
 
     if (dataInicio > dataFim) {
-      setErro('A data inicial não pode ser posterior à data final.');
+      setErro("A data inicial não pode ser posterior à data final.");
       return;
     }
 
@@ -107,7 +124,7 @@ export default function RelatorioVendasPage() {
       setErro(
         erroRelatorio instanceof Error
           ? erroRelatorio.message
-          : 'Não foi possível gerar o relatório.',
+          : "Não foi possível gerar o relatório.",
       );
     } finally {
       setGerando(false);
@@ -207,7 +224,7 @@ export default function RelatorioVendasPage() {
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:opacity-60 sm:col-span-2 lg:col-span-1"
             >
               <Search size={18} />
-              {gerando ? 'Gerando...' : 'Gerar relatório'}
+              {gerando ? "Gerando..." : "Gerar relatório"}
             </button>
           </form>
 
@@ -234,9 +251,9 @@ export default function RelatorioVendasPage() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-              Selecione as datas e clique em Gerar relatório para visualizar
-              os indicadores, os produtos mais vendidos e uma análise
-              simplificada dos resultados.
+              Selecione as datas e clique em Gerar relatório para visualizar os
+              indicadores, os produtos mais vendidos e uma análise simplificada
+              dos resultados.
             </p>
           </div>
         )}
@@ -262,9 +279,8 @@ export default function RelatorioVendasPage() {
                     </h2>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      Período:{' '}
-                      {formatarData(relatorio.periodo.inicio)}
-                      {' até '}
+                      Período: {formatarData(relatorio.periodo.inicio)}
+                      {" até "}
                       {formatarData(relatorio.periodo.fim)}
                     </p>
                   </div>
@@ -275,9 +291,7 @@ export default function RelatorioVendasPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-white p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-slate-500">
-                      Faturamento total
-                    </p>
+                    <p className="text-sm text-slate-500">Faturamento total</p>
                     <DollarSign size={20} className="text-emerald-600" />
                   </div>
 
@@ -292,9 +306,7 @@ export default function RelatorioVendasPage() {
 
                 <div className="rounded-xl border border-slate-200 bg-white p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-slate-500">
-                      Vendas realizadas
-                    </p>
+                    <p className="text-sm text-slate-500">Vendas realizadas</p>
                     <ShoppingBag size={20} className="text-blue-600" />
                   </div>
 
@@ -359,38 +371,41 @@ export default function RelatorioVendasPage() {
                 {relatorio.analise.produtoMaisVendido ? (
                   <div className="space-y-3 text-sm leading-6 text-slate-600">
                     <p>
-                      O produto com maior quantidade vendida foi{' '}
+                      O produto com maior quantidade vendida foi{" "}
                       <strong className="font-semibold text-slate-900">
                         {relatorio.analise.produtoMaisVendido}
                       </strong>
-                      , com{' '}
+                      , com{" "}
                       <strong className="font-semibold text-slate-900">
                         {formatarNumero(relatorio.analise.quantidadeVendida)}
-                      </strong>{' '}
+                      </strong>{" "}
                       unidade(s).
                     </p>
 
                     <p>
-                      Esse produto representa aproximadamente{' '}
+                      Esse produto representa aproximadamente{" "}
                       <strong className="font-semibold text-slate-900">
-                        {relatorio.analise.percentualVendas.toLocaleString('pt-BR', {
-                          maximumFractionDigits: 1,
-                        })}
+                        {relatorio.analise.percentualVendas.toLocaleString(
+                          "pt-BR",
+                          {
+                            maximumFractionDigits: 1,
+                          },
+                        )}
                         %
-                      </strong>{' '}
+                      </strong>{" "}
                       do total de unidades vendidas.
                     </p>
 
                     <p>
-                      O faturamento foi de{' '}
+                      O faturamento foi de{" "}
                       <strong className="font-semibold text-slate-900">
                         {formatarMoeda(relatorio.analise.faturamentoTotal)}
                       </strong>
-                      , com{' '}
+                      , com{" "}
                       <strong className="font-semibold text-slate-900">
                         {formatarNumero(relatorio.analise.quantidadeVendas)}
-                      </strong>{' '}
-                      venda(s) e ticket médio de{' '}
+                      </strong>{" "}
+                      venda(s) e ticket médio de{" "}
                       <strong className="font-semibold text-slate-900">
                         {formatarMoeda(relatorio.analise.ticketMedio)}
                       </strong>
@@ -461,8 +476,8 @@ export default function RelatorioVendasPage() {
                                 <span
                                   className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold ${
                                     item.posicao === 1
-                                      ? 'bg-blue-50 text-blue-700'
-                                      : 'bg-slate-100 text-slate-600'
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "bg-slate-100 text-slate-600"
                                   }`}
                                 >
                                   {item.posicao}
@@ -515,7 +530,6 @@ export default function RelatorioVendasPage() {
                   </div>
                 )}
               </section>
-
             </section>
 
             {/* Ações fora do relatório impresso */}
@@ -524,7 +538,7 @@ export default function RelatorioVendasPage() {
                 type="button"
                 onClick={() => {
                   setRelatorio(null);
-                  setErro('');
+                  setErro("");
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >

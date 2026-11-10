@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 const rotasErro: Record<number, string> = {
-  400: '/erro/400',
-  401: '/erro/401',
-  403: '/erro/403',
-  404: '/erro/404',
-  500: '/erro/500',
+  400: "/erro/400",
+  401: "/erro/401",
+  403: "/erro/403",
+  404: "/erro/404",
+  500: "/erro/500",
 };
 
 export default function GlobalErrorHandler() {
@@ -30,10 +30,10 @@ export default function GlobalErrorHandler() {
       }
     }
 
-    window.addEventListener('api:http-error', tratarErro);
+    window.addEventListener("api:http-error", tratarErro);
 
     return () => {
-      window.removeEventListener('api:http-error', tratarErro);
+      window.removeEventListener("api:http-error", tratarErro);
     };
   }, [router, pathname]);
 

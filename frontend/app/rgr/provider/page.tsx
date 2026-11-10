@@ -1,10 +1,21 @@
+"use client";
 
-'use client';
-
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import {Plus, Search, Pencil, Trash2, Users, Phone, Mail, MapPin, Store, X, AlertTriangle} from 'lucide-react';
-import { formProductService as providerService } from '@/services/provider/provider.service';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Users,
+  Phone,
+  Mail,
+  MapPin,
+  Store,
+  X,
+  AlertTriangle,
+} from "lucide-react";
+import { formProductService as providerService } from "@/services/provider/provider.service";
 
 interface Fornecedor {
   id: string;
@@ -20,15 +31,14 @@ interface Fornecedor {
   observacoes: string;
 }
 
-
 export default function FornecedoresPage() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [fornecedorSelecionado, setFornecedorSelecionado] =
     useState<Fornecedor | null>(null);
-  const [erroExclusao, setErroExclusao] = useState('');
-  const [erroCarregamento, setErroCarregamento] = useState('');
+  const [erroExclusao, setErroExclusao] = useState("");
+  const [erroCarregamento, setErroCarregamento] = useState("");
 
   useEffect(() => {
     providerService
@@ -39,7 +49,7 @@ export default function FornecedoresPage() {
   }, []);
 
   const fornecedoresFiltrados = useMemo(() => {
-    const termo = busca.trim().toLocaleLowerCase('pt-BR');
+    const termo = busca.trim().toLocaleLowerCase("pt-BR");
 
     if (!termo) return fornecedores;
 
@@ -53,7 +63,7 @@ export default function FornecedoresPage() {
         fornecedor.cidade,
         fornecedor.estado,
       ].some((valor) =>
-        (valor ?? '').toLocaleLowerCase('pt-BR').includes(termo),
+        (valor ?? "").toLocaleLowerCase("pt-BR").includes(termo),
       ),
     );
   }, [fornecedores, busca]);
@@ -65,15 +75,17 @@ export default function FornecedoresPage() {
       await providerService.deleteProvider(fornecedorSelecionado.id);
 
       setFornecedores((atuais) =>
-        atuais.filter((fornecedor) => fornecedor.id !== fornecedorSelecionado.id),
+        atuais.filter(
+          (fornecedor) => fornecedor.id !== fornecedorSelecionado.id,
+        ),
       );
       setFornecedorSelecionado(null);
-      setErroExclusao('');
+      setErroExclusao("");
     } catch (erro) {
       setErroExclusao(
         erro instanceof Error
           ? erro.message
-          : 'Não foi possível excluir o fornecedor. Tente novamente.',
+          : "Não foi possível excluir o fornecedor. Tente novamente.",
       );
     }
   }
@@ -116,11 +128,9 @@ export default function FornecedoresPage() {
             </div>
 
             <div>
-              <p className="text-sm text-slate-500">
-                Fornecedores cadastrados
-              </p>
+              <p className="text-sm text-slate-500">Fornecedores cadastrados</p>
               <p className="mt-1 text-2xl font-bold text-slate-900">
-                {carregando ? '—' : fornecedores.length}
+                {carregando ? "—" : fornecedores.length}
               </p>
             </div>
           </div>
@@ -131,11 +141,9 @@ export default function FornecedoresPage() {
             </div>
 
             <div>
-              <p className="text-sm text-slate-500">
-                Resultados da pesquisa
-              </p>
+              <p className="text-sm text-slate-500">Resultados da pesquisa</p>
               <p className="mt-1 text-2xl font-bold text-slate-900">
-                {carregando ? '—' : fornecedoresFiltrados.length}
+                {carregando ? "—" : fornecedoresFiltrados.length}
               </p>
             </div>
           </div>
@@ -221,14 +229,14 @@ export default function FornecedoresPage() {
 
                       <p className="mt-3 font-semibold text-slate-800">
                         {busca
-                          ? 'Nenhum fornecedor encontrado'
-                          : 'Nenhum fornecedor cadastrado'}
+                          ? "Nenhum fornecedor encontrado"
+                          : "Nenhum fornecedor cadastrado"}
                       </p>
 
                       <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
                         {busca
-                          ? 'Tente pesquisar por outro nome, documento ou contato.'
-                          : 'Cadastre seu primeiro fornecedor para começar a organizar seus parceiros comerciais.'}
+                          ? "Tente pesquisar por outro nome, documento ou contato."
+                          : "Cadastre seu primeiro fornecedor para começar a organizar seus parceiros comerciais."}
                       </p>
 
                       {!busca && (
@@ -269,7 +277,7 @@ export default function FornecedoresPage() {
                       </td>
 
                       <td className="px-5 py-4 text-sm text-slate-600">
-                        {fornecedor.documento || '—'}
+                        {fornecedor.documento || "—"}
                       </td>
 
                       <td className="px-5 py-4">
@@ -296,7 +304,7 @@ export default function FornecedoresPage() {
                             </span>
                           )}
 
-                          {!fornecedor.telefone && !fornecedor.email && '—'}
+                          {!fornecedor.telefone && !fornecedor.email && "—"}
                         </div>
                       </td>
 
@@ -311,8 +319,8 @@ export default function FornecedoresPage() {
                             {fornecedor.cidade || fornecedor.estado
                               ? [fornecedor.cidade, fornecedor.estado]
                                   .filter(Boolean)
-                                  .join(' / ')
-                              : '—'}
+                                  .join(" / ")
+                              : "—"}
                           </span>
                         </div>
                       </td>
@@ -335,7 +343,7 @@ export default function FornecedoresPage() {
                             title="Excluir fornecedor"
                             aria-label={`Excluir ${fornecedor.nome}`}
                             onClick={() => {
-                              setErroExclusao('');
+                              setErroExclusao("");
                               setFornecedorSelecionado(fornecedor);
                             }}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
@@ -355,10 +363,10 @@ export default function FornecedoresPage() {
           {!carregando && fornecedoresFiltrados.length > 0 && (
             <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-3">
               <p className="text-xs text-slate-500">
-                Exibindo {fornecedoresFiltrados.length}{' '}
+                Exibindo {fornecedoresFiltrados.length}{" "}
                 {fornecedoresFiltrados.length === 1
-                  ? 'fornecedor'
-                  : 'fornecedores'}
+                  ? "fornecedor"
+                  : "fornecedores"}
               </p>
             </div>
           )}
@@ -372,7 +380,7 @@ export default function FornecedoresPage() {
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setFornecedorSelecionado(null);
-              setErroExclusao('');
+              setErroExclusao("");
             }
           }}
         >
@@ -391,7 +399,7 @@ export default function FornecedoresPage() {
                 type="button"
                 onClick={() => {
                   setFornecedorSelecionado(null);
-                  setErroExclusao('');
+                  setErroExclusao("");
                 }}
                 aria-label="Fechar confirmação"
                 className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -408,7 +416,7 @@ export default function FornecedoresPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Tem certeza de que deseja excluir{' '}
+              Tem certeza de que deseja excluir{" "}
               <strong className="font-semibold text-slate-800">
                 {fornecedorSelecionado.nome}
               </strong>
@@ -433,7 +441,7 @@ export default function FornecedoresPage() {
                 type="button"
                 onClick={() => {
                   setFornecedorSelecionado(null);
-                  setErroExclusao('');
+                  setErroExclusao("");
                 }}
                 className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
