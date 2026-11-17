@@ -1,0 +1,142 @@
+Execução dos testes automatizados do back-end (Jest + Supertest)
+Data: 17/11/2026 | Ambiente: Linux, Node.js 22, MariaDB 10.11 local, banco rgr_teste
+Comando: npx jest --coverage (com NODE_ENV=test)
+
+ARQUIVO src/test/auth.test.js  (14 testes)
+  [OK]    login > entra com credenciais corretas e devolve o perfil, sem a senha
+  [OK]    login > CT06: aceita login com e-mail contendo maiúsculas e espaços
+  [OK]    login > recusa senha errada
+  [OK]    login > recusa e-mail inexistente
+  [OK]    login > recusa corpo vazio
+  [OK]    login > logout encerra a sessão
+  [OK]    middlewares de acesso > sem login, get /products responde 401
+  [OK]    middlewares de acesso > sem login, post /products responde 401
+  [OK]    middlewares de acesso > sem login, get /providers responde 401
+  [OK]    middlewares de acesso > sem login, get /reports?dataInicio=2026-01-01&dataFim=2026-01-31 responde 401
+  [OK]    middlewares de acesso > funcionário consulta, mas não altera o cadastro nem vê relatórios
+  [OK]    middlewares de acesso > ADM acessa tudo
+  [OK]    rota desconhecida responde 404 em JSON
+  [OK]    JSON malformado responde 400
+
+ARQUIVO src/test/fornecedores.test.js  (3 testes)
+  [OK]    faz o CRUD completo
+  [OK]    exige nome e pelo menos um contato
+  [OK]    não exclui fornecedor com produtos vinculados
+
+ARQUIVO src/test/produtos.test.js  (23 testes)
+  [OK]    CRUD de produtos > cria e devolve os campos em português e em inglês
+  [OK]    CRUD de produtos > lista dentro de { data }, formato lido pelo dashboard
+  [OK]    CRUD de produtos > aceita o formato em inglês enviado pelo dashboard
+  [OK]    CRUD de produtos > atualiza
+  [OK]    CRUD de produtos > recusa dados inválidos
+  [OK]    CRUD de produtos > recusa SKU repetido, mas permite manter o próprio
+  [OK]    CRUD de produtos > aceita SKU vazio em mais de um produto
+  [OK]    CRUD de produtos > recusa fornecedor inexistente
+  [OK]    CRUD de produtos > id inexistente ou inválido responde 404
+  [OK]    DELETE de produtos > remove só a quantidade informada: 30 camisetas - 4 = 26
+  [OK]    DELETE de produtos > também aceita a quantidade no corpo da requisição
+  [OK]    DELETE de produtos > remover todo o estoque mantém o produto com quantidade zero
+  [OK]    DELETE de produtos > recusa quantidade 31 e não altera o estoque
+  [OK]    DELETE de produtos > recusa quantidade 0 e não altera o estoque
+  [OK]    DELETE de produtos > recusa quantidade -1 e não altera o estoque
+  [OK]    DELETE de produtos > recusa quantidade 1.5 e não altera o estoque
+  [OK]    DELETE de produtos > recusa quantidade abc e não altera o estoque
+  [OK]    DELETE de produtos > sem quantidade, exclui o produto
+  [OK]    venda > funcionário vende e o estoque baixa
+  [OK]    venda > recusa vender 11 unidade(s) com 10 em estoque
+  [OK]    venda > recusa vender 0 unidade(s) com 10 em estoque
+  [OK]    venda > recusa vender undefined unidade(s) com 10 em estoque
+  [OK]    venda > recusa venda se o produto já estiver com estoque zerado
+
+ARQUIVO src/test/relatorios.test.js  (11 testes)
+  [OK]    summary calcula os totais do período
+  [OK]    analysis identifica o produto mais vendido e o percentual
+  [OK]    top-products ordena por quantidade e numera as posições
+  [OK]    /reports reúne todos os campos combinados com o front
+  [OK]    período sem vendas responde zero, sem divisão por zero
+  [OK]    recusa período inválido: sem datas
+  [OK]    recusa período inválido: sem dataFim
+  [OK]    recusa período inválido: formato errado
+  [OK]    recusa período inválido: data inexistente
+  [OK]    recusa período inválido: início depois do fim
+  [OK]    uma venda feita pela API entra no relatório do dia e continua após excluir o produto
+
+ARQUIVO src/test/seguranca.test.js  (4 testes)
+  [OK]    /saude confirma que a API e o banco estão no ar
+  [OK]    envia cabeçalhos de segurança e proíbe cache das respostas
+  [OK]    informa o limite de requisições restante
+  [OK]    bloqueia o login após 10 tentativas erradas em 15 minutos
+
+ARQUIVO src/test/unit/middleware.test.js  (3 testes)
+  [OK]    Testes Unitários - Segurança e Middlewares > CT_SEC_01: exigeLogin deve retornar 401 se não houver usuário logado
+  [OK]    Testes Unitários - Segurança e Middlewares > CT_SEC_02: exigePerfil deve retornar 403 se o perfil for insuficiente
+  [OK]    Testes Unitários - Segurança e Middlewares > CT_SEC_03: exigePerfil deve chamar next() se o perfil for autorizado
+
+ARQUIVO src/test/unit/validacoes.test.js  (6 testes)
+  [OK]    Testes Unitários - Validações e Utilitários > CT103/CT104: deve validar e rejeitar produtos inválidos
+  [OK]    Testes Unitários - Validações e Utilitários > CT105: deve normalizar campos em português e inglês
+  [OK]    Testes Unitários - Validações e Utilitários > CT107: deve validar regras de período de datas
+  [OK]    Testes Unitários - Validações e Utilitários > CT111: deve converter IDs ou lançar HttpError 404
+  [FALHA] Testes Unitários - Validações e Utilitários > CT112: deve calcular resumo com zero vendas sem divisão por zero
+            Error: expect(received).toBe(expected) // Object.is equality
+            Expected: 0
+            Received: undefined
+  [FALHA] Testes Unitários - Validações e Utilitários > CT112: deve calcular resumo e ticket médio corretamente com vendas
+            Error: expect(received).toBe(expected) // Object.is equality
+            Expected: 3
+            Received: undefined
+
+Resultado: 62 aprovados, 2 reprovados, 64 no total; 6 de 7 arquivos aprovados.
+
+Cobertura de código:
+--------------------------|---------|----------|---------|---------|-------------------
+File                      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------------|---------|----------|---------|---------|-------------------
+All files                 |   96.73 |    84.97 |     100 |    97.6 |                   
+ src                      |     100 |       75 |     100 |     100 |                   
+  app.js                  |     100 |       75 |     100 |     100 | 34                
+ src/config               |   87.75 |       50 |     100 |   89.36 |                   
+  database.js             |   86.36 |    43.75 |     100 |   85.71 | 11,21-23          
+  seed.js                 |   83.33 |     62.5 |     100 |    90.9 | 21                
+  session.js              |   88.88 |       50 |     100 |   88.88 | 9                 
+  swagger.js              |     100 |      100 |     100 |     100 |                   
+ src/controllers          |   94.64 |    81.25 |     100 |     100 |                   
+  AuthController.js       |   85.71 |       75 |     100 |     100 | 13-34             
+  FornecedorController.js |     100 |      100 |     100 |     100 |                   
+  ProdutoController.js    |     100 |      100 |     100 |     100 |                   
+  RelatorioController.js  |     100 |      100 |     100 |     100 |                   
+ src/middlewares          |   82.75 |       75 |     100 |   82.75 |                   
+  errorHandler.js         |   63.63 |       50 |     100 |   63.63 | 14-15,21-22       
+  exigeLogin.js           |     100 |      100 |     100 |     100 |                   
+  exigePerfil.js          |     100 |      100 |     100 |     100 |                   
+  limiteRequisicoes.js    |   88.88 |    83.33 |     100 |   88.88 | 13                
+ src/models               |     100 |       95 |     100 |     100 |                   
+  Fornecedor.js           |     100 |    88.88 |     100 |     100 | 6                 
+  Produto.js              |     100 |    97.36 |     100 |     100 | 11                
+  Relatorio.js            |     100 |     92.3 |     100 |     100 | 11                
+  Usuario.js              |     100 |      100 |     100 |     100 |                   
+ src/repositories         |     100 |    66.66 |     100 |     100 |                   
+  FornecedorRepository.js |     100 |      100 |     100 |     100 |                   
+  ProdutoRepository.js    |     100 |      100 |     100 |     100 |                   
+  UsuarioRepository.js    |     100 |      100 |     100 |     100 |                   
+  VendaRepository.js      |     100 |        0 |     100 |     100 | 6                 
+ src/routes               |     100 |      100 |     100 |     100 |                   
+  authRoutes.js           |     100 |      100 |     100 |     100 |                   
+  fornecedorRoutes.js     |     100 |      100 |     100 |     100 |                   
+  index.js                |     100 |      100 |     100 |     100 |                   
+  produtoRoutes.js        |     100 |      100 |     100 |     100 |                   
+  relatorioRoutes.js      |     100 |      100 |     100 |     100 |                   
+ src/services             |     100 |    97.61 |     100 |     100 |                   
+  AuthService.js          |     100 |      100 |     100 |     100 |                   
+  FornecedorService.js    |     100 |      100 |     100 |     100 |                   
+  ProdutoService.js       |     100 |      100 |     100 |     100 |                   
+  RelatorioService.js     |     100 |    88.88 |     100 |     100 | 14                
+ src/test                 |     100 |      100 |     100 |     100 |                   
+  auxiliares.js           |     100 |      100 |     100 |     100 |                   
+ src/utils                |     100 |      100 |     100 |     100 |                   
+  HttpError.js            |     100 |      100 |     100 |     100 |                   
+  lerId.js                |     100 |      100 |     100 |     100 |                   
+ src/views                |     100 |      100 |     100 |     100 |                   
+  fornecedorView.js       |     100 |      100 |     100 |     100 |                   
+  produtoView.js          |     100 |      100 |     100 |     100 |                   
+--------------------------|---------|----------|---------|---------|-------------------

@@ -1,0 +1,149 @@
+Testes funcionais caixa-preta executados manualmente pela API (requisições HTTP)
+Data: 17/11/2026 | API local (http://localhost:3001) com MariaDB 10.11 | Código exatamente como enviado, sem alterações
+Resultado: 37 de 42 verificações conforme o esperado; 5 divergências (marcadas como FALHA)
+
+== CT-FUN-01 Valor limite: preço do produto
+[OK   ] CT-FUN-01 | valor = 0
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 0, "quantidade": 30, "tamanho": "M"}
+        esperado: 400 | obtido: 400 {"erro":"O valor deve ser maior que zero"}
+[FALHA] CT-FUN-01 | valor = 0.001
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 0.001, "quantidade": 30, "tamanho": "M"}
+        esperado: 400 | obtido: 500 {"erro":"Erro interno do servidor"}
+[OK   ] CT-FUN-01 | valor = 0.01
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 0.01, "quantidade": 30, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":1,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":0.01,"quantidade":30,"tamanho":"M","descrica
+[OK   ] CT-FUN-01 | valor = 99999999.99
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 99999999.99, "quantidade": 30, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":2,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":99999999.99,"quantidade":30,"tamanho":"M","d
+[FALHA] CT-FUN-01 | valor = 100000000
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 100000000, "quantidade": 30, "tamanho": "M"}
+        esperado: 400 | obtido: 500 {"erro":"Erro interno do servidor"}
+
+== CT-FUN-02 Valor limite: quantidade em estoque
+[OK   ] CT-FUN-02 | quantidade = -1
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": -1, "tamanho": "M"}
+        esperado: 400 | obtido: 400 {"erro":"A quantidade deve ser um número inteiro maior ou igual a zero"}
+[OK   ] CT-FUN-02 | quantidade = 0
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 0, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":3,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":0,"tamanho":"M","descricao":
+[OK   ] CT-FUN-02 | quantidade = 2147483647
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 2147483647, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":4,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":2147483647,"tamanho":"M","de
+[FALHA] CT-FUN-02 | quantidade = 2147483648
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 2147483648, "tamanho": "M"}
+        esperado: 400 | obtido: 500 {"erro":"Erro interno do servidor"}
+
+== CT-FUN-03 Partição de equivalência: tipo dos campos numéricos
+[OK   ] CT-FUN-03 | número
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 3, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":5,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":3,"tamanho":"M","descricao":
+[OK   ] CT-FUN-03 | texto numérico
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": "50", "quantidade": "3", "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":6,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":3,"tamanho":"M","descricao":
+[FALHA] CT-FUN-03 | texto vazio na quantidade
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": "", "tamanho": "M"}
+        esperado: 400 | obtido: 201 {"id":7,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":0,"tamanho":"M","descricao":
+[FALHA] CT-FUN-03 | booleano no valor
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": true, "quantidade": 30, "tamanho": "M"}
+        esperado: 400 | obtido: 201 {"id":8,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":1,"quantidade":30,"tamanho":"M","descricao":
+[OK   ] CT-FUN-03 | nulo na quantidade
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": null, "tamanho": "M"}
+        esperado: 400 | obtido: 400 {"erro":"A quantidade deve ser um número inteiro maior ou igual a zero"}
+[OK   ] CT-FUN-03 | texto não numérico no valor
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": "abc", "quantidade": 30, "tamanho": "M"}
+        esperado: 400 | obtido: 400 {"erro":"O valor deve ser maior que zero"}
+
+== CT-FUN-04 Valor limite: tamanho do nome (VARCHAR 150)
+[OK   ] CT-FUN-04 | nome com 150 caracteres
+        ADM: POST /products  corpo: {"nome": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        esperado: 201 | obtido: 201 {"id":9,"sku":null,"nome":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[OK   ] CT-FUN-04 | nome com 151 caracteres
+        ADM: POST /products  corpo: {"nome": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        esperado: 400 | obtido: 400 {"erro":"Um dos campos ultrapassa o tamanho máximo permitido"}
+
+== CT-FUN-05 Valor limite: venda com 5 unidades em estoque
+[OK   ] CT-FUN-05 | vender 0 (estoque final esperado 5)
+        Funcionário: PATCH /products/10/sale  corpo: {"quantidadeVendida": 0}
+        esperado: 400 | obtido: 400 {"erro":"A quantidade deve ser um número inteiro maior que zero"}
+        estoque depois: 5 (OK)
+[OK   ] CT-FUN-05 | vender 1 (estoque final esperado 4)
+        Funcionário: PATCH /products/11/sale  corpo: {"quantidadeVendida": 1}
+        esperado: 200 | obtido: 200 {"produto":{"id":11,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":4,"tamanho":"M",
+        estoque depois: 4 (OK)
+[OK   ] CT-FUN-05 | vender 5 (estoque final esperado 0)
+        Funcionário: PATCH /products/12/sale  corpo: {"quantidadeVendida": 5}
+        esperado: 200 | obtido: 200 {"produto":{"id":12,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":0,"tamanho":"M",
+        estoque depois: 0 (OK)
+[OK   ] CT-FUN-05 | vender 6 (estoque final esperado 5)
+        Funcionário: PATCH /products/13/sale  corpo: {"quantidadeVendida": 6}
+        esperado: 400 | obtido: 400 {"erro":"Estoque insuficiente: há 5 unidade(s) disponível(is)"}
+        estoque depois: 5 (OK)
+
+== CT-FUN-06 Valor limite e partição: datas do relatório
+[OK   ] CT-FUN-06 | mesmo dia
+        ADM: GET /reports/sales/summary?dataInicio=2026-11-17&dataFim=2026-11-17
+        esperado: 200 | obtido: 200 {"faturamentoTotal":300,"vendasRealizadas":2,"itensVendidos":6,"ticketMedio":150}
+[OK   ] CT-FUN-06 | 29/02 em ano bissexto
+        ADM: GET /reports/sales/summary?dataInicio=2024-02-29&dataFim=2024-03-01
+        esperado: 200 | obtido: 200 {"faturamentoTotal":0,"vendasRealizadas":0,"itensVendidos":0,"ticketMedio":0}
+[OK   ] CT-FUN-06 | 29/02 em ano não bissexto
+        ADM: GET /reports/sales/summary?dataInicio=2026-02-29&dataFim=2026-03-01
+        esperado: 400 | obtido: 400 {"erro":"Informe dataInicio e dataFim no formato AAAA-MM-DD"}
+[OK   ] CT-FUN-06 | início um dia depois do fim
+        ADM: GET /reports/sales/summary?dataInicio=2026-11-18&dataFim=2026-11-17
+        esperado: 400 | obtido: 400 {"erro":"dataInicio não pode ser maior que dataFim"}
+[OK   ] CT-FUN-06 | mês sem zero à esquerda
+        ADM: GET /reports/sales/summary?dataInicio=2026-1-01&dataFim=2026-01-31
+        esperado: 400 | obtido: 400 {"erro":"Informe dataInicio e dataFim no formato AAAA-MM-DD"}
+
+== CT-FUN-07 Partição de equivalência: contato do fornecedor
+[OK   ] CT-FUN-07 | só telefone
+        ADM: POST /providers  corpo: {"nome": "Malharia Brasil", "telefone": "(67) 99999-0000"}
+        esperado: 201 | obtido: 201 {"id":"1","nome":"Malharia Brasil","nomeFantasia":"","documento":"","telefone":"(67) 99999-0000","email":"","c
+[OK   ] CT-FUN-07 | só e-mail
+        ADM: POST /providers  corpo: {"nome": "Malharia Brasil", "email": "contato@malharia.com"}
+        esperado: 201 | obtido: 201 {"id":"2","nome":"Malharia Brasil","nomeFantasia":"","documento":"","telefone":"","email":"contato@malharia.co
+[OK   ] CT-FUN-07 | telefone e e-mail
+        ADM: POST /providers  corpo: {"nome": "Malharia Brasil", "telefone": "(67) 99999-0000", "email": "contato@malharia.com"}
+        esperado: 201 | obtido: 201 {"id":"3","nome":"Malharia Brasil","nomeFantasia":"","documento":"","telefone":"(67) 99999-0000","email":"cont
+[OK   ] CT-FUN-07 | nenhum contato
+        ADM: POST /providers  corpo: {"nome": "Malharia Brasil"}
+        esperado: 400 | obtido: 400 {"erro":"Informe pelo menos um telefone ou e-mail"}
+
+== CT-FUN-08 Tabela de decisão: controle de acesso
+[OK   ] CT-FUN-08 | R1: sem login + consulta
+        sem login: GET /products
+        esperado: 401 | obtido: 401 {"erro":"Faça login para continuar"}
+[OK   ] CT-FUN-08 | R2: sem login + venda
+        sem login: PATCH /products/14/sale  corpo: {"quantidadeVendida": 1}
+        esperado: 401 | obtido: 401 {"erro":"Faça login para continuar"}
+[OK   ] CT-FUN-08 | R3: sem login + cadastro
+        sem login: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 30, "tamanho": "M"}
+        esperado: 401 | obtido: 401 {"erro":"Faça login para continuar"}
+[OK   ] CT-FUN-08 | R4: sem login + relatorio
+        sem login: GET /reports/sales/summary?dataInicio=2026-01-01&dataFim=2026-12-31
+        esperado: 401 | obtido: 401 {"erro":"Faça login para continuar"}
+[OK   ] CT-FUN-08 | R5: Funcionário + consulta
+        Funcionário: GET /products
+        esperado: 200 | obtido: 200 {"data":[{"id":9,"sku":null,"nome":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[OK   ] CT-FUN-08 | R6: Funcionário + venda
+        Funcionário: PATCH /products/14/sale  corpo: {"quantidadeVendida": 1}
+        esperado: 200 | obtido: 200 {"produto":{"id":14,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":9,"tamanho":"M",
+[OK   ] CT-FUN-08 | R7: Funcionário + cadastro
+        Funcionário: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 30, "tamanho": "M"}
+        esperado: 403 | obtido: 403 {"erro":"Seu perfil não tem permissão para esta ação"}
+[OK   ] CT-FUN-08 | R8: Funcionário + relatorio
+        Funcionário: GET /reports/sales/summary?dataInicio=2026-01-01&dataFim=2026-12-31
+        esperado: 403 | obtido: 403 {"erro":"Seu perfil não tem permissão para esta ação"}
+[OK   ] CT-FUN-08 | R9: ADM + consulta
+        ADM: GET /products
+        esperado: 200 | obtido: 200 {"data":[{"id":9,"sku":null,"nome":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[OK   ] CT-FUN-08 | R10: ADM + venda
+        ADM: PATCH /products/14/sale  corpo: {"quantidadeVendida": 1}
+        esperado: 200 | obtido: 200 {"produto":{"id":14,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":8,"tamanho":"M",
+[OK   ] CT-FUN-08 | R11: ADM + cadastro
+        ADM: POST /products  corpo: {"nome": "Camiseta", "categoria": "Camisa", "valor": 50, "quantidade": 30, "tamanho": "M"}
+        esperado: 201 | obtido: 201 {"id":15,"sku":null,"nome":"Camiseta","categoria":"Camisa","valor":50,"quantidade":30,"tamanho":"M","descricao
+[OK   ] CT-FUN-08 | R12: ADM + relatorio
+        ADM: GET /reports/sales/summary?dataInicio=2026-01-01&dataFim=2026-12-31
+        esperado: 200 | obtido: 200 {"faturamentoTotal":400,"vendasRealizadas":4,"itensVendidos":8,"ticketMedio":100}

@@ -1,0 +1,21 @@
+Verificação dos testes Cypress existentes (frontend/cypress/e2e/login/) contra a interface real
+Data: 17/11/2026 | Front em http://localhost:3000 e API em http://localhost:3001, código como enviado
+Método: cada rota e seletor usado nos scripts foi conferido num navegador (Chromium) na tela correspondente.
+
+login.cy.ts
+  Arquivo vazio (0 bytes): nenhum teste.
+
+fluxo_principal.cy.ts
+  CT_FRONT_01  cy.visit('/produtos') e cy.url().should('include', '/')
+               GET /produtos -> 404 (a rota não existe; a tela de estoque é /rgr/dashboard)
+               A asserção "a URL contém '/'" é sempre verdadeira: o teste passaria sem verificar o bloqueio.
+  CT_FRONT_02  cy.get('input[name="email"]') e cy.get('input[name="senha"]')
+               Na tela /login: input[name="email"] = 0, input[name="senha"] = 0
+               Os campos reais são #email e #password (1 de cada). O teste falha no primeiro passo.
+               Texto "Bem-vindo" após o login: visível (a asserção final estaria correta).
+  CT_FRONT_03  cy.visit('/produtos'), botão "Vender", input[name="quantidadeVendida"], botão "Confirmar",
+               mensagem "Venda registrada com sucesso"
+               Na tela /rgr/dashboard: botão "Vender" = 0, input[name="quantidadeVendida"] = 0, botão "Confirmar" = 0
+               O botão real é "Registrar venda" (um por produto) e a mensagem é "N unidades registradas como venda."
+               O teste falha no login (mesmos seletores do CT_FRONT_02).
+  Os dois testes de login usam a senha do ADM escrita no código.

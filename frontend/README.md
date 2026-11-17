@@ -23,13 +23,18 @@ Acesse `http://localhost:3000/login`.
 ## Organização
 
 ```
+proxy.ts               manda as telas /rgr para o login quando não há cookie de sessão
+next.config.ts         repassa /api/... para a API (API_URL)
 app/
-  login/               tela de login
-  componentes/         login, menu lateral e rodapé
+  login/               tela de login (login_section/Login.tsx)
+  rgr/page.tsx         tela inicial depois do login
   rgr/dashboard/       estoque, venda, edição e remoção de produtos
   rgr/formProduct/     cadastro e edição de produto
-  rgr/provider/        lista, cadastro e edição de fornecedores
+  rgr/provider/        lista, cadastro e edição de fornecedores (registerProvider/)
   rgr/export/          relatório de vendas
+  erro/[code]/         páginas de erro (400, 401, 403, 404, 500)
+  componentes/         menu lateral, barra superior, rodapé, confirmação de logout,
+                       tratamento global de erros e componentes de interface (ui/)
 services/
   api.ts               configuração do axios e mensagens de erro da API
   auth/                encerrar a sessão
@@ -37,7 +42,14 @@ services/
   formProduct/         cadastrar, buscar e editar produto
   provider/            CRUD de fornecedores
   export/              relatórios
+  cepService.ts        endereço pelo CEP (ViaCEP)
+  cnpjService.ts       dados da empresa pelo CNPJ (BrasilAPI)
+utils/
+  masks.ts             máscaras de CEP, CPF/CNPJ, telefone, SKU e valor
+cypress/               testes E2E
 ```
+
+Os arquivos `lib/auth.ts` e `lib/middleware.ts` (JWT com `jose`) não são usados por nenhuma tela. A autenticação usa só o cookie de sessão da API.
 
 ## Comunicação com a API
 
@@ -49,3 +61,14 @@ Isso tem duas vantagens:
 - Em produção, o front e a API podem ficar em provedores diferentes sem problemas de CORS ou de cookies bloqueados.
 
 Como o `next.config.ts` é lido no build, depois de mudar o `API_URL` em produção é preciso fazer um novo deploy.
+
+## Testes
+
+Os testes E2E ficam em `cypress/e2e/` e rodam com a API e o front no ar:
+
+```bash
+npx cypress run
+```
+
+Nesta versão os scripts ainda não executam (arquivo vazio e seletores que não existem na tela). A situação e as correções sugeridas estão no [relatório de testes](../docs/relatorio-de-execucao.md#4-defeitos-encontrados).
+

@@ -38,7 +38,10 @@ Para rodar os testes, que usam o banco `rgr_teste` e o esvaziam a cada execuçã
 
 ```bash
 npm test
+npx jest --coverage   # com relatório de cobertura
 ```
+
+Os testes ficam em `src/test/`: os unitários em `unit/` (validações e middlewares, sem banco) e os de integração nos demais arquivos (rotas chamadas com Supertest, passando pelo banco de teste). Os resultados, a cobertura e os defeitos encontrados estão na [documentação de testes](../docs/README.md).
 
 ## Organização do projeto
 
@@ -61,7 +64,7 @@ src/
   models/              validação dos dados e perfis de acesso
   repositories/        comandos SQL
   utils/               HttpError e leitura do id da URL
-  test/                testes automatizados
+  test/                testes unitários (unit/) e de integração
 ```
 
 Caminho de uma requisição:
